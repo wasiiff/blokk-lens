@@ -24,7 +24,7 @@ export async function POST(req: Request) {
             error: "Unauthorized"
         }, { status: 401 })
     }
-    const body = req.json();
+    const body = await req.json();
     const data = favoriteSchema.parse(body);
 
     await connectDB();
@@ -49,6 +49,9 @@ export async function DELETE(req: Request) {
     const { searchParams } = new URL(req.url);
     const coinId = searchParams.get("coinId")
 
-    const deletedFav = await Favorites.findByIdAndDelete({ coinId });
+    const deletedFav = await Favorites.findOneAndDelete({
+        coinId,
+        userId: session.user.id,
+    });
     return Response.json({ success: true });
 }
