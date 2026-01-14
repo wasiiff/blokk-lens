@@ -24,7 +24,7 @@ export const fetchCoinDetails = (id: string) =>
 ====================== */
 
 export const fetchFavorites = () =>
-  api<Favorite[]>("/api/favorites/coins");
+  api<Favorite[]>("/api/coins/favorites");
 
 export const addFavorite = (coinId: string) =>
   api<Favorite>("/api/favorites", {
