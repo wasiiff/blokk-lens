@@ -45,8 +45,15 @@ export interface CoinDetails {
         circulating_supply?: number;
         total_supply?: number | null;
         market_cap_rank?: number | null;
+        high_24h?: Record<string, number>;
+        low_24h?: Record<string, number>;
+        ath?: Record<string, number>;
     };
-    links?: Record<string, any>;
+    links?: {
+        homepage?: string[];
+        blockchain_site?: string[];
+        [key: string]: any;
+    };
 }
 
 export interface Favorite {
