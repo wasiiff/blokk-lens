@@ -54,11 +54,7 @@ export default function SignupForm() {
   return (
     <div className="w-full max-w-md">
       {/* Card */}
-      <div className="glass-card p-8 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-pink-500/20 rounded-full blur-3xl" />
-        
+      <div className="bg-muted/50 backdrop-blur-sm rounded-xl p-8 border border-border relative overflow-hidden">
         {/* Content */}
         <div className="relative">
           {/* Header */}
@@ -66,29 +62,29 @@ export default function SignupForm() {
             <div className="flex justify-center mb-6">
               <Logo size="lg" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Create account</h1>
-            <p className="text-gray-400 text-sm">Start tracking your favorite cryptocurrencies</p>
+            <h1 className="text-2xl font-semibold text-foreground mb-2">Create account</h1>
+            <p className="text-muted-foreground text-sm">Start tracking your favorite cryptocurrencies</p>
           </div>
 
           {/* Form */}
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
             {/* Name */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Full Name</label>
+              <label className="text-sm font-medium text-foreground">Full Name</label>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
                   <User className="w-5 h-5" />
                 </div>
                 <Input 
-                  className="pl-12 h-12 bg-white/[0.03] border-white/[0.08] focus:border-purple-500/50 focus:bg-white/[0.05] rounded-xl transition-all" 
+                  className="pl-12 h-12 bg-background border-border focus:border-primary/50 rounded-xl transition-all" 
                   type="text" 
                   placeholder="John Doe" 
                   {...register("name")} 
                 />
               </div>
               {errors.name && (
-                <p className="text-xs text-red-400 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-red-400" />
+                <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-red-600 dark:bg-red-400" />
                   {errors.name.message}
                 </p>
               )}
@@ -96,21 +92,21 @@ export default function SignupForm() {
 
             {/* Email */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Email</label>
+              <label className="text-sm font-medium text-foreground">Email</label>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
                   <Mail className="w-5 h-5" />
                 </div>
                 <Input 
-                  className="pl-12 h-12 bg-white/[0.03] border-white/[0.08] focus:border-purple-500/50 focus:bg-white/[0.05] rounded-xl transition-all" 
+                  className="pl-12 h-12 bg-background border-border focus:border-primary/50 rounded-xl transition-all" 
                   type="email" 
                   placeholder="you@company.com" 
                   {...register("email")} 
                 />
               </div>
               {errors.email && (
-                <p className="text-xs text-red-400 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-red-400" />
+                <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-red-600 dark:bg-red-400" />
                   {errors.email.message}
                 </p>
               )}
@@ -118,13 +114,13 @@ export default function SignupForm() {
 
             {/* Password */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Password</label>
+              <label className="text-sm font-medium text-foreground">Password</label>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-400 transition-colors">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
                   <Lock className="w-5 h-5" />
                 </div>
                 <Input
-                  className="pl-12 pr-12 h-12 bg-white/[0.03] border-white/[0.08] focus:border-purple-500/50 focus:bg-white/[0.05] rounded-xl transition-all"
+                  className="pl-12 pr-12 h-12 bg-background border-border focus:border-primary/50 rounded-xl transition-all"
                   type={showPassword ? "text" : "password"}
                   placeholder="Min. 6 characters"
                   {...register("password")}
@@ -132,14 +128,14 @@ export default function SignupForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.password && (
-                <p className="text-xs text-red-400 flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-red-400" />
+                <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-red-600 dark:bg-red-400" />
                   {errors.password.message}
                 </p>
               )}
@@ -148,22 +144,22 @@ export default function SignupForm() {
             {/* Error */}
             {error && (
               <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                <p className="text-sm text-red-400">{error}</p>
+                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               </div>
             )}
 
             {/* Success */}
             {success && (
               <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-400" />
-                <p className="text-sm text-green-400">{success}</p>
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
               </div>
             )}
 
             {/* Submit */}
             <Button 
               type="submit" 
-              className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium rounded-xl shadow-lg shadow-purple-500/25 transition-all duration-300" 
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-xl shadow-sm transition-all duration-300" 
               disabled={isSubmitting}
             >
               {isSubmitting ? (
@@ -179,10 +175,10 @@ export default function SignupForm() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/[0.06]" />
+                <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center">
-                <span className="px-4 text-xs text-gray-500 bg-[#0a0a1a]">or continue with</span>
+                <span className="px-4 text-xs text-muted-foreground bg-muted/50">or continue with</span>
               </div>
             </div>
 
@@ -190,7 +186,7 @@ export default function SignupForm() {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-12 bg-white/[0.02] border-white/[0.08] hover:bg-white/[0.05] hover:border-white/[0.12] rounded-xl transition-all"
+              className="w-full h-12 bg-background border-border hover:bg-muted hover:border-border/80 rounded-xl transition-all"
               onClick={() => signIn("google", { callbackUrl: "/" })}
             >
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
@@ -203,9 +199,9 @@ export default function SignupForm() {
             </Button>
 
             {/* Sign in link */}
-            <p className="text-center text-sm text-gray-400 mt-6">
+            <p className="text-center text-sm text-muted-foreground mt-6">
               Already have an account?{" "}
-              <Link href="/auth/login" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+              <Link href="/auth/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
                 Sign in
               </Link>
             </p>

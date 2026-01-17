@@ -11,7 +11,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background geometric pattern */}
-      <div className="absolute inset-0 opacity-20">
+      <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.15]">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <pattern id="auth-grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -26,16 +26,16 @@ export default function Page() {
         <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-12 xl:px-20">
           <div className="max-w-lg">
             <Link href="/" className="inline-flex items-center gap-3 mb-12 group">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <TrendingUp className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/15 transition-all">
+                <TrendingUp className="w-6 h-6 text-primary" />
               </div>
               <span className="text-2xl font-bold text-foreground">CryptoPulse</span>
             </Link>
 
-            <h1 className="text-4xl xl:text-5xl font-bold text-foreground mb-6 leading-tight">
+            <h1 className="text-4xl xl:text-5xl font-normal text-foreground mb-6 leading-tight font-serif">
               Track your crypto
               <br />
-              <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">portfolio in real-time</span>
+              <span className="text-primary">portfolio in real-time</span>
             </h1>
 
             <p className="text-lg text-muted-foreground mb-12 leading-relaxed">
@@ -45,8 +45,8 @@ export default function Page() {
 
             <div className="space-y-6">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0 ring-1 ring-blue-500/20">
-                  <TrendingUp className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+                <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-6 h-6 text-foreground" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground mb-1">Real-time Data</h3>
@@ -55,8 +55,8 @@ export default function Page() {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center flex-shrink-0 ring-1 ring-purple-500/20">
-                  <Star className="w-6 h-6 text-purple-500 dark:text-purple-400" />
+                <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center flex-shrink-0">
+                  <Star className="w-6 h-6 text-foreground" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground mb-1">Custom Watchlists</h3>
@@ -65,8 +65,8 @@ export default function Page() {
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center flex-shrink-0 ring-1 ring-pink-500/20">
-                  <Shield className="w-6 h-6 text-pink-500 dark:text-pink-400" />
+                <div className="w-12 h-12 rounded-xl bg-muted border border-border flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-foreground" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground mb-1">Secure & Private</h3>
