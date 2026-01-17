@@ -1,13 +1,16 @@
+"use client"
+
 import React from "react"
+import { useSearchParams } from "next/navigation"
 import LoginForm from "@/components/auth/LoginForm"
+import WalletLoginForm from "@/components/auth/WalletLoginForm"
 import Link from "next/link"
 import { TrendingUp, Shield, Star } from "lucide-react"
 
-export const metadata = {
-  title: "Sign in — CryptoPulse",
-}
-
-export default function Page() {
+export default function LoginPage() {
+  const searchParams = useSearchParams()
+  const method = searchParams.get('method')
+  const isWalletMethod = method === 'wallet'
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background geometric pattern */}
@@ -29,7 +32,7 @@ export default function Page() {
               <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/15 transition-all">
                 <TrendingUp className="w-6 h-6 text-primary" />
               </div>
-              <span className="text-2xl font-bold text-foreground">CryptoPulse</span>
+              <span className="text-2xl font-bold text-foreground">BLOKK LENS</span>
             </Link>
 
             <h1 className="text-4xl xl:text-5xl font-normal text-foreground mb-6 leading-tight font-serif">
@@ -39,7 +42,7 @@ export default function Page() {
             </h1>
 
             <p className="text-lg text-muted-foreground mb-12 leading-relaxed">
-              Join thousands of traders who trust CryptoPulse for real-time market data, 
+              Join thousands of traders who trust BLOKK LENS for real-time market data, 
               advanced analytics, and personalized watchlists.
             </p>
 
@@ -78,7 +81,7 @@ export default function Page() {
         </div>
 
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12">
-          <LoginForm />
+          {isWalletMethod ? <WalletLoginForm /> : <LoginForm />}
         </div>
       </div>
     </div>

@@ -8,8 +8,7 @@ export function Logo({ className = "", size = "default" }: { className?: string;
 
   return (
     <div className={`${s.wrapper} relative ${className}`}>
-      <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 blur-sm opacity-75" />
-      <div className="relative w-full h-full rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center">
+      <div className="relative w-full h-full rounded-xl bg-primary flex items-center justify-center border border-primary/20">
         <svg className={s.icon} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path 
             d="M12 2L2 7L12 12L22 7L12 2Z" 
@@ -44,8 +43,8 @@ export function LogoFull({ className = "" }: { className?: string }) {
     <div className={`flex items-center gap-3 ${className}`}>
       <Logo />
       <div className="flex flex-col">
-        <span className="text-xl font-bold text-white tracking-tight">CryptoPulse</span>
-        <span className="text-[10px] text-gray-500 uppercase tracking-widest -mt-0.5">Real-time Tracking</span>
+        <span className="text-xl font-bold text-foreground tracking-tight">BLOKK LENS</span>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-widest -mt-0.5">Real-time Tracking</span>
       </div>
     </div>
   )

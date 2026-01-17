@@ -30,7 +30,7 @@ export default function Footer() {
           <div className="md:col-span-2">
             <div className="flex items-center space-x-3 mb-6">
               <Logo />
-              <span className="font-bold text-2xl text-foreground">CryptoPulse</span>
+              <span className="font-bold text-2xl text-foreground">BLOKK LENS</span>
             </div>
             <p className="text-muted-foreground max-w-md leading-relaxed text-base">
               Real-time cryptocurrency tracking platform. Stay updated with the latest 
@@ -99,7 +99,7 @@ export default function Footer() {
         <div className="w-full border-t border-dashed border-border/60 mt-16 pt-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-muted-foreground text-sm">
-              © {currentYear} CryptoPulse. All rights reserved.
+              © {currentYear} BLOKK LENS. All rights reserved.
             </p>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Powered by</span>

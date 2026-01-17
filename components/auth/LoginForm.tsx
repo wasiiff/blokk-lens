@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/ui/logo"
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react"
+import WalletConnectButton from "./WalletConnectButton"
 
 type FormData = z.infer<typeof loginSchema>
 
@@ -42,7 +43,7 @@ export default function LoginForm() {
   return (
     <div className="w-full max-w-md">
       {/* Card */}
-      <div className="bg-muted/50 backdrop-blur-sm rounded-xl p-8 border border-border relative overflow-hidden">
+      <div className="glass-card-light rounded-xl p-8 relative overflow-hidden">
         {/* Content */}
         <div className="relative">
           {/* Header */}
@@ -50,21 +51,21 @@ export default function LoginForm() {
             <div className="flex justify-center mb-6">
               <Logo size="lg" />
             </div>
-            <h1 className="text-2xl font-semibold text-foreground mb-2">Welcome back</h1>
-            <p className="text-muted-foreground text-sm">Sign in to access your watchlists and alerts</p>
+            <h1 className="text-2xl font-semibold card-text mb-2">Welcome back</h1>
+            <p className="card-text-muted text-sm">Sign in to access your watchlists and alerts</p>
           </div>
 
           {/* Form */}
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
             {/* Email */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Email</label>
+              <label className="text-sm font-medium card-text">Email</label>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 card-text-muted group-focus-within:text-primary transition-colors">
                   <Mail className="w-5 h-5" />
                 </div>
                 <Input 
-                  className="pl-12 h-12 bg-background border-border focus:border-primary/50 rounded-xl transition-all" 
+                  className="pl-12 h-12 bg-white/5 dark:bg-background border-white/20 dark:border-border focus:border-primary/50 rounded-xl transition-all card-text" 
                   type="email" 
                   placeholder="you@company.com" 
                   {...register("email")} 
@@ -81,17 +82,17 @@ export default function LoginForm() {
             {/* Password */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Password</label>
-                <Link href="/auth/forgot" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                <label className="text-sm font-medium card-text">Password</label>
+                <Link href="/auth/forgot" className="text-xs card-text-muted hover:text-primary transition-colors">
                   Forgot password?
                 </Link>
               </div>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 card-text-muted group-focus-within:text-primary transition-colors">
                   <Lock className="w-5 h-5" />
                 </div>
                 <Input
-                  className="pl-12 pr-12 h-12 bg-background border-border focus:border-primary/50 rounded-xl transition-all"
+                  className="pl-12 pr-12 h-12 bg-white/5 dark:bg-background border-white/20 dark:border-border focus:border-primary/50 rounded-xl transition-all card-text"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   {...register("password")}
@@ -99,7 +100,7 @@ export default function LoginForm() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 card-text-muted hover:text-white dark:hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -138,10 +139,10 @@ export default function LoginForm() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
+                <div className="w-full border-t border-white/10 dark:border-border" />
               </div>
               <div className="relative flex justify-center">
-                <span className="px-4 text-xs text-muted-foreground bg-muted/50">or continue with</span>
+                <span className="px-4 text-xs card-text-muted bg-black/60 dark:bg-muted/50">or continue with</span>
               </div>
             </div>
 
@@ -149,7 +150,7 @@ export default function LoginForm() {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-12 bg-background border-border hover:bg-muted hover:border-border/80 rounded-xl transition-all"
+              className="w-full h-12 bg-white/5 dark:bg-background border-white/20 dark:border-border hover:bg-white/10 dark:hover:bg-muted hover:border-white/30 dark:hover:border-border/80 rounded-xl transition-all"
               onClick={() => signIn("google", { callbackUrl: "/" })}
             >
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
@@ -158,11 +159,14 @@ export default function LoginForm() {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
-              Continue with Google
+              <span className="card-text">Continue with Google</span>
             </Button>
 
+            {/* Wallet Connect */}
+            <WalletConnectButton />
+
             {/* Sign up link */}
-            <p className="text-center text-sm text-muted-foreground mt-6">
+            <p className="text-center text-sm card-text-muted mt-6">
               Don&apos;t have an account?{" "}
               <Link href="/auth/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
                 Create one

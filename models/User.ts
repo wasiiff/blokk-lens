@@ -9,7 +9,7 @@ const UserSchema = new Schema(
             type: String,
             default: "credentials",
         },
-
+        walletAddress: { type: String, unique: true, sparse: true },
     },
     { timestamps: true }
 )

@@ -4,7 +4,7 @@ import Link from "next/link"
 import { BarChart3, Bell, Globe, Sparkles } from "lucide-react"
 
 export const metadata = {
-  title: "Create account — CryptoPulse",
+  title: "Create account — BLOKK LENS",
 }
 
 export default function Page() {
@@ -39,7 +39,7 @@ export default function Page() {
                   <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <span className="text-2xl font-bold text-foreground">CryptoPulse</span>
+              <span className="text-2xl font-bold text-foreground">BLOKK LENS</span>
             </Link>
 
             <h1 className="text-4xl xl:text-5xl font-normal text-foreground mb-6 leading-tight font-serif">

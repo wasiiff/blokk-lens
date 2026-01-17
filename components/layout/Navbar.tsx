@@ -1,12 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/ui/logo"
-import { Star, LogOut, User, Menu, X, ChevronRight } from "lucide-react"
+import { Star, Menu, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
+import GetStartedDropdown from "./GetStartedDropdown"
 
 export default function Navbar() {
   const { data: session } = useSession()
@@ -38,7 +39,7 @@ export default function Navbar() {
                     }`}>
                     <Logo />
                     <div className="flex flex-col">
-                      <span className="font-bold text-lg text-foreground leading-none">CryptoPulse</span>
+                      <span className="font-bold text-lg text-foreground leading-none">BLOKK LENs</span>
                     </div>
                   </div>
                 </Link>
@@ -91,68 +92,10 @@ export default function Navbar() {
                   <ThemeToggle />
                 </div>
 
-                {session ? (
-                  <>
-                    <div className={`flex items-center gap-3 px-4 py-2 rounded-xl backdrop-blur-md transition-all duration-300 ${
-                        isScrolled
-                          ? 'bg-background/60 border border-border/30'
-                          : 'bg-background/40 border border-border/20'
-                      }`}>
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                        <User className="w-4 h-4 text-primary" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-foreground">{session.user?.name}</span>
-                        <span className="text-xs text-muted-foreground">Pro Member</span>
-                      </div>
-                    </div>
-                    <div className="hover:scale-105 transition-transform">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className={`h-10 px-4 rounded-xl backdrop-blur-md transition-all duration-300 group ${
-                          isScrolled
-                            ? 'bg-background/60 border border-border/30 hover:bg-background/80'
-                            : 'bg-background/40 border border-border/20 hover:bg-background/60'
-                        }`}
-                        onClick={() => signOut()}
-                      >
-                        <LogOut className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Link href="/auth/login">
-                      <div className="hover:scale-105 transition-transform">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`h-10 px-4 rounded-xl backdrop-blur-md transition-all duration-300 ${
-                            isScrolled
-                              ? 'bg-background/60 border border-border/30 hover:bg-background/80'
-                              : 'bg-background/40 border border-border/20 hover:bg-background/60'
-                          }`}
-                        >
-                          <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                            Sign in
-                          </span>
-                        </Button>
-                      </div>
-                    </Link>
-                    <Link href="/auth/register">
-                      <div className="hover:scale-105 transition-transform">
-                        <Button
-                          size="sm"
-                          className="h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all duration-300"
-                        >
-                          Get Started
-                          <ChevronRight className="w-4 h-4 ml-1" />
-                        </Button>
-                      </div>
-                    </Link>
-                  </>
-                )}
+                {/* Get Started Dropdown */}
+                <div className="hover:scale-105 transition-transform">
+                  <GetStartedDropdown isScrolled={isScrolled} />
+                </div>
               </div>
             </div>
           </div>
@@ -169,7 +112,7 @@ export default function Navbar() {
                       : 'bg-background/40 border-border/20'
                   }`}>
                   <Logo />
-                  <span className="font-bold text-base text-foreground">CryptoPulse</span>
+                  <span className="font-bold text-base text-foreground">BLOKK LENS</span>
                 </div>
               </Link>
 
@@ -234,38 +177,7 @@ export default function Navbar() {
 
                 {/* Mobile Auth Section */}
                 <div className="border-t border-border/20 mt-2 pt-2">
-                  {session ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-background/60">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                          <User className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{session.user?.name}</p>
-                          <p className="text-xs text-muted-foreground">{session.user?.email}</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-center"
-                        onClick={() => signOut()}
-                      >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Sign out
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
-                        <Button variant="outline" className="w-full">Sign in</Button>
-                      </Link>
-                      <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)}>
-                        <Button className="w-full bg-primary hover:bg-primary/90">
-                          Get Started
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
+                  <GetStartedDropdown isScrolled={isScrolled} />
                 </div>
               </div>
             </div>

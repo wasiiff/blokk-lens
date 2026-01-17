@@ -24,10 +24,6 @@ export default function Home() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.5,
-        ease: [0.25, 0.4, 0.25, 1],
-      },
     },
   }
 
@@ -99,7 +95,7 @@ export default function Home() {
                   <motion.h1 variants={itemVariants} className="text-[32px] sm:text-[42px] md:text-[48px] lg:text-[56px] font-normal mb-6 leading-[1.1] font-serif">
                     <span className="text-foreground">Track Crypto</span>
                     <br />
-                    <span className="text-gradient">Like Never Before</span>
+                    <span className="text-primary">Like Never Before</span>
                   </motion.h1>
                   
                   <motion.p variants={itemVariants} className="text-lg md:text-xl text-muted-foreground max-w-2xl leading-relaxed">
