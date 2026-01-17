@@ -1,15 +1,22 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { fetchMarketCoins } from "@/services/queries"
+import { fetchMarketCoins, fetchGlobalMarketData } from "@/services/queries"
 import { TrendingUp, DollarSign, BarChart3, Activity } from "lucide-react"
 import { StatCardSkeleton } from "@/components/ui/skeleton"
 
 export default function MarketStats() {
-  const { data: coins, isLoading } = useQuery({
-    queryKey: ["market-coins"],
-    queryFn: fetchMarketCoins,
+  const { data: globalData, isLoading: isGlobalLoading } = useQuery({
+    queryKey: ["global-market-data"],
+    queryFn: fetchGlobalMarketData,
   })
+
+  const { data: coins, isLoading: isCoinsLoading } = useQuery({
+    queryKey: ["market-coins-stats"],
+    queryFn: () => fetchMarketCoins(1, 100), // Fetch top 100 for better stats
+  })
+
+  const isLoading = isGlobalLoading || isCoinsLoading
 
   if (isLoading) {
     return (
@@ -21,8 +28,12 @@ export default function MarketStats() {
     )
   }
 
-  const totalMarketCap = coins?.reduce((acc, coin) => acc + (coin.market_cap || 0), 0) || 0
-  const totalVolume = coins?.reduce((acc, coin) => acc + (coin.total_volume || 0), 0) || 0
+  // Use global data for market cap and volume
+  const totalMarketCap = globalData?.data?.total_market_cap?.usd || 0
+  const totalVolume = globalData?.data?.total_volume?.usd || 0
+  const marketCapChange = globalData?.data?.market_cap_change_percentage_24h_usd || 0
+
+  // Calculate average change and top gainer from coins
   const avgChange = (coins?.reduce((acc, coin) => acc + (coin.price_change_percentage_24h || 0), 0) || 0) / (coins?.length || 1)
   const topGainer = coins?.reduce((max, coin) => 
     (coin.price_change_percentage_24h || 0) > (max.price_change_percentage_24h || 0) ? coin : max
@@ -32,16 +43,16 @@ export default function MarketStats() {
     {
       label: "Total Market Cap",
       value: `$${(totalMarketCap / 1e12).toFixed(2)}T`,
-      change: "+2.4%",
-      trend: "up" as const,
+      change: `${marketCapChange >= 0 ? "+" : ""}${marketCapChange.toFixed(1)}%`,
+      trend: marketCapChange >= 0 ? "up" as const : "down" as const,
       icon: DollarSign,
       color: "blue",
     },
     {
       label: "24h Volume",
       value: `$${(totalVolume / 1e9).toFixed(1)}B`,
-      change: "+5.2%",
-      trend: "up" as const,
+      change: avgChange >= 0 ? "Bullish" : "Bearish",
+      trend: avgChange >= 0 ? "up" as const : "down" as const,
       icon: BarChart3,
       color: "purple",
     },

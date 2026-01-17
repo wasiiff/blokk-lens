@@ -2,7 +2,6 @@ import { Suspense } from "react"
 import CoinDetailClient from "@/components/coins/CoinDetailClient"
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
-import { BackButton } from "@/components/ui/back-button"
 import { Loader2 } from "lucide-react"
 
 export default async function CoinDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -58,10 +57,6 @@ export default async function CoinDetailPage({ params }: { params: Promise<{ id:
             <Navbar />
 
             <main className="w-full">
-              <div className="pt-24 sm:pt-28 md:pt-32 lg:pt-32 pb-8 px-2 sm:px-4 md:px-8 lg:px-12">
-                <BackButton className="mb-6" />
-              </div>
-              
               <Suspense
                 fallback={
                   <div className="flex items-center justify-center min-h-[60vh]">

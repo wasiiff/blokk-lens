@@ -4,7 +4,6 @@ import { Suspense } from "react"
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
 import FavoritesClient from "@/components/coins/FavoritesClient"
-import { BackButton } from "@/components/ui/back-button"
 import { Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 
@@ -65,8 +64,6 @@ export default function FavoritesPage() {
                 transition={{ duration: 0.5 }}
                 className="pt-24 sm:pt-28 md:pt-32 lg:pt-32 pb-8"
               >
-                <BackButton className="mb-6" />
-                
                 <div className="mb-8">
                   <h1 className="text-[32px] sm:text-[42px] md:text-[48px] font-normal mb-3 leading-[1.1] font-serif text-foreground">
                     Your Favorites

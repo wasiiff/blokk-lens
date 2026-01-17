@@ -6,7 +6,6 @@ import { signIn, useSession, signOut } from "next-auth/react"
 import { useAccount, useDisconnect } from "wagmi"
 import { ChevronDown, Mail, Wallet, LogOut, User, Chrome } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import WalletConnectButton from "@/components/auth/WalletConnectButton"
 
 interface GetStartedDropdownProps {
   isScrolled: boolean

@@ -22,6 +22,16 @@ export const fetchTrendingCoins = () =>
 export const fetchCoinDetails = (id: string) =>
   api<CoinDetails>(`/api/coins/${id}`);
 
+export const fetchGlobalMarketData = () =>
+  api<{
+    data: {
+      total_market_cap: { usd: number };
+      total_volume: { usd: number };
+      market_cap_percentage: { [key: string]: number };
+      market_cap_change_percentage_24h_usd: number;
+    };
+  }>("/api/coins/global");
+
 /* ======================
    FAVORITES
 ====================== */
