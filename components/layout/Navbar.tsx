@@ -67,6 +67,25 @@ export default function Navbar() {
 
               {/* Actions */}
               <div className="flex items-center space-x-3">
+                {/* GitHub Star Button */}
+                <div className="hover:scale-105 transition-transform">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`h-10 px-4 rounded-xl backdrop-blur-md transition-all duration-300 group ${
+                      isScrolled
+                        ? 'bg-background/60 border border-border/30 hover:bg-background/80'
+                        : 'bg-background/40 border border-border/20 hover:bg-background/60'
+                    }`}
+                    onClick={() => window.open("https://github.com/wasiiff/blokk-lens", "_blank", "noopener,noreferrer")}
+                  >
+                    <Star className="w-4 h-4 mr-2 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                      Star
+                    </span>
+                  </Button>
+                </div>
+
                 {/* Theme Toggle */}
                 <div className="hover:scale-105 transition-transform">
                   <ThemeToggle />
