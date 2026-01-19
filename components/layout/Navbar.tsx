@@ -56,6 +56,11 @@ export default function Navbar() {
                     Markets
                   </div>
                 </Link>
+                <Link href="/convert">
+                  <div className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-background/50 cursor-pointer">
+                    Convert
+                  </div>
+                </Link>
                 {session && (
                   <Link href="/favorites">
                     <div className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-background/50 cursor-pointer inline-flex items-center gap-2">
@@ -172,6 +177,14 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Markets
+                  </div>
+                </Link>
+                <Link href="/convert">
+                  <div
+                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all rounded-xl hover:bg-background/60 relative cursor-pointer hover:scale-105"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Convert
                   </div>
                 </Link>
                 {session && (
