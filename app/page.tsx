@@ -35,7 +35,7 @@ export default function Home() {
       <BackgroundGrid />
 
       <div className="relative flex flex-col justify-start items-center w-full">
-        <div className="w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-12 lg:max-w-[1270px] lg:w-[1360px] relative flex flex-col justify-start items-start">
+        <div className="w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-12 xl:max-w-[1400px] xl:w-[1400px] relative flex flex-col justify-start items-start">
           {/* Left decorative pattern */}
           <LeftDecorativePattern />
 

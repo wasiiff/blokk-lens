@@ -24,35 +24,35 @@ interface LeftPatternProps {
 
 export function LeftDecorativePattern({ className = "" }: LeftPatternProps) {
   return (
-    <div className={`hidden lg:block absolute left-0 top-0 w-[50px] h-full bg-gradient-to-b from-foreground/5 via-foreground/8 to-foreground/5 border-r border-foreground/20 ${className}`} style={{ zIndex: 1 }}>
+    <div className={`hidden xl:block absolute -left-[80px] top-0 w-[80px] h-full bg-linear-to-b from-foreground/5 via-foreground/8 to-foreground/5 border-r border-foreground/20 ${className}`} style={{ zIndex: 1 }}>
       <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <pattern id="left-pattern" width="50" height="100" patternUnits="userSpaceOnUse">
+          <pattern id="left-pattern" width="80" height="100" patternUnits="userSpaceOnUse">
             {/* Decorative dots - vertical alignment */}
-            <circle cx="25" cy="8" r="2" fill="hsl(var(--primary))" opacity="0.8" />
-            <circle cx="25" cy="20" r="1.5" fill="hsl(var(--foreground))" opacity="0.5" />
-            <circle cx="25" cy="32" r="2" fill="hsl(var(--primary))" opacity="0.8" />
+            <circle cx="40" cy="8" r="2" fill="hsl(var(--primary))" opacity="0.8" />
+            <circle cx="40" cy="20" r="1.5" fill="hsl(var(--foreground))" opacity="0.5" />
+            <circle cx="40" cy="32" r="2" fill="hsl(var(--primary))" opacity="0.8" />
             
             {/* Horizontal lines with dots */}
-            <line x1="10" y1="45" x2="40" y2="45" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" />
-            <circle cx="10" cy="45" r="2" fill="hsl(var(--foreground))" opacity="0.7" />
-            <circle cx="40" cy="45" r="2" fill="hsl(var(--foreground))" opacity="0.7" />
+            <line x1="20" y1="45" x2="60" y2="45" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" />
+            <circle cx="20" cy="45" r="2" fill="hsl(var(--foreground))" opacity="0.7" />
+            <circle cx="60" cy="45" r="2" fill="hsl(var(--foreground))" opacity="0.7" />
             
             {/* Diagonal cross pattern */}
-            <line x1="15" y1="55" x2="35" y2="65" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.5" />
-            <line x1="35" y1="55" x2="15" y2="65" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.5" />
-            <circle cx="25" cy="60" r="1.5" fill="hsl(var(--primary))" opacity="0.8" />
+            <line x1="25" y1="55" x2="55" y2="65" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.5" />
+            <line x1="55" y1="55" x2="25" y2="65" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.5" />
+            <circle cx="40" cy="60" r="1.5" fill="hsl(var(--primary))" opacity="0.8" />
             
             {/* Bracket-like shapes */}
-            <path d="M 12,75 L 12,85 L 18,85" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
-            <path d="M 38,75 L 38,85 L 32,85" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
+            <path d="M 22,75 L 22,85 L 28,85" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
+            <path d="M 58,75 L 58,85 L 52,85" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
             
             {/* Small accent dots */}
-            <circle cx="20" cy="92" r="1" fill="hsl(var(--foreground))" opacity="0.4" />
             <circle cx="30" cy="92" r="1" fill="hsl(var(--foreground))" opacity="0.4" />
+            <circle cx="50" cy="92" r="1" fill="hsl(var(--foreground))" opacity="0.4" />
             
             {/* Vertical dashed centerline */}
-            <line x1="25" y1="0" x2="25" y2="100" stroke="hsl(var(--foreground))" strokeWidth="0.5" strokeDasharray="3,5" opacity="0.3" />
+            <line x1="40" y1="0" x2="40" y2="100" stroke="hsl(var(--foreground))" strokeWidth="0.5" strokeDasharray="3,5" opacity="0.3" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#left-pattern)" />
@@ -67,35 +67,35 @@ interface RightPatternProps {
 
 export function RightDecorativePattern({ className = "" }: RightPatternProps) {
   return (
-    <div className={`hidden lg:block absolute right-0 top-0 w-[50px] h-full bg-gradient-to-b from-foreground/5 via-foreground/8 to-foreground/5 border-l border-foreground/20 ${className}`} style={{ zIndex: 1 }}>
+    <div className={`hidden xl:block absolute -right-[80px] top-0 w-[80px] h-full bg-linear-to-b from-foreground/5 via-foreground/8 to-foreground/5 border-l border-foreground/20 ${className}`} style={{ zIndex: 1 }}>
       <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <pattern id="right-pattern" width="50" height="100" patternUnits="userSpaceOnUse">
+          <pattern id="right-pattern" width="80" height="100" patternUnits="userSpaceOnUse">
             {/* Decorative dots - vertical alignment */}
-            <circle cx="25" cy="8" r="2" fill="hsl(var(--primary))" opacity="0.8" />
-            <circle cx="25" cy="20" r="1.5" fill="hsl(var(--foreground))" opacity="0.5" />
-            <circle cx="25" cy="32" r="2" fill="hsl(var(--primary))" opacity="0.8" />
+            <circle cx="40" cy="8" r="2" fill="hsl(var(--primary))" opacity="0.8" />
+            <circle cx="40" cy="20" r="1.5" fill="hsl(var(--foreground))" opacity="0.5" />
+            <circle cx="40" cy="32" r="2" fill="hsl(var(--primary))" opacity="0.8" />
             
             {/* Horizontal lines with dots */}
-            <line x1="10" y1="45" x2="40" y2="45" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" />
-            <circle cx="10" cy="45" r="2" fill="hsl(var(--foreground))" opacity="0.7" />
-            <circle cx="40" cy="45" r="2" fill="hsl(var(--foreground))" opacity="0.7" />
+            <line x1="20" y1="45" x2="60" y2="45" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" />
+            <circle cx="20" cy="45" r="2" fill="hsl(var(--foreground))" opacity="0.7" />
+            <circle cx="60" cy="45" r="2" fill="hsl(var(--foreground))" opacity="0.7" />
             
             {/* Diagonal cross pattern */}
-            <line x1="15" y1="55" x2="35" y2="65" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.5" />
-            <line x1="35" y1="55" x2="15" y2="65" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.5" />
-            <circle cx="25" cy="60" r="1.5" fill="hsl(var(--primary))" opacity="0.8" />
+            <line x1="25" y1="55" x2="55" y2="65" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.5" />
+            <line x1="55" y1="55" x2="25" y2="65" stroke="hsl(var(--foreground))" strokeWidth="1" opacity="0.5" />
+            <circle cx="40" cy="60" r="1.5" fill="hsl(var(--primary))" opacity="0.8" />
             
             {/* Bracket-like shapes */}
-            <path d="M 12,75 L 12,85 L 18,85" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
-            <path d="M 38,75 L 38,85 L 32,85" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
+            <path d="M 22,75 L 22,85 L 28,85" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
+            <path d="M 58,75 L 58,85 L 52,85" fill="none" stroke="hsl(var(--foreground))" strokeWidth="1.5" opacity="0.6" strokeLinecap="round" />
             
             {/* Small accent dots */}
-            <circle cx="20" cy="92" r="1" fill="hsl(var(--foreground))" opacity="0.4" />
             <circle cx="30" cy="92" r="1" fill="hsl(var(--foreground))" opacity="0.4" />
+            <circle cx="50" cy="92" r="1" fill="hsl(var(--foreground))" opacity="0.4" />
             
             {/* Vertical dashed centerline */}
-            <line x1="25" y1="0" x2="25" y2="100" stroke="hsl(var(--foreground))" strokeWidth="0.5" strokeDasharray="3,5" opacity="0.3" />
+            <line x1="40" y1="0" x2="40" y2="100" stroke="hsl(var(--foreground))" strokeWidth="0.5" strokeDasharray="3,5" opacity="0.3" />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#right-pattern)" />
