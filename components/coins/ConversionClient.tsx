@@ -1,15 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { motion } from "framer-motion"
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
-import CurrencySelector from "./CurrencySelector"
+import VirtualizedCoinSelector from "./VirtualizedCoinSelector"
 import ConversionDisplay from "./ConversionDisplay"
 import PopularPairs from "./PopularPairs"
 import { BackgroundGrid, LeftDecorativePattern, RightDecorativePattern, VerticalBorderLines } from "@/components/ui/background-patterns"
-import { ConversionBackground } from "@/components/ui/conversion-bg"
 import { ArrowDownUp } from "lucide-react"
+import { usePageVisibility } from "@/lib/hooks/usePageVisibility"
 
 export default function ConversionClient() {
   const [fromCoin, setFromCoin] = useState({ 
@@ -29,27 +29,14 @@ export default function ConversionClient() {
   const [exchangeRate, setExchangeRate] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0)
-
-  useEffect(() => {
-    if (fromCoin.id && toCoin.id && fromCoin.id !== toCoin.id && amount && parseFloat(amount) > 0) {
-      // Increase delay to reduce API calls
-      const timer = setTimeout(() => {
-        // Only fetch if enough time has passed (throttle)
-        const now = Date.now()
-        if (now - lastFetchTime > 1000) { // Minimum 1 second between requests
-          fetchConversionRate()
-        }
-      }, 800) // Increased from 300ms to 800ms
-      
-      return () => clearTimeout(timer)
-    } else if (!amount || parseFloat(amount) <= 0) {
-      setConvertedAmount(0)
-      setExchangeRate(null)
-    }
-  }, [fromCoin.id, toCoin.id, amount])
+  const isPageVisible = usePageVisibility()
 
   const fetchConversionRate = async () => {
+    // Don't fetch if page is not visible
+    if (!isPageVisible) {
+      console.log('[Convert] Page not visible, skipping conversion')
+      return
+    }
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
       setConvertedAmount(0)
       setExchangeRate(null)
@@ -73,7 +60,7 @@ export default function ConversionClient() {
 
     setIsLoading(true)
     setError(null)
-    setLastFetchTime(Date.now())
+    
     try {
       const url = `/api/convert?from=${encodeURIComponent(fromCoin.id)}&to=${encodeURIComponent(toCoin.id)}`
       console.log("Fetching conversion:", url)
@@ -88,7 +75,7 @@ export default function ConversionClient() {
         if (response.status === 404) {
           setError(`Price data not available for ${fromCoin.symbol.toUpperCase()} or ${toCoin.symbol.toUpperCase()}`)
         } else if (response.status === 429) {
-          setError("Rate limit exceeded. Please try again in a moment.")
+          setError("Too many requests. Please wait a moment and try again.")
         } else {
           setError("Unable to fetch conversion rate. Please try again.")
         }
@@ -122,13 +109,46 @@ export default function ConversionClient() {
   }
 
   const handleSwap = () => {
+    const temp = fromCoin
     setFromCoin(toCoin)
-    setToCoin(fromCoin)
+    setToCoin(temp)
+    // Clear results when swapping
+    setConvertedAmount(null)
+    setExchangeRate(null)
+    setError(null)
   }
+
+  const handleFromCoinSelect = useCallback((coin: any) => {
+    setFromCoin(coin)
+    // Clear results when changing coins
+    setConvertedAmount(null)
+    setExchangeRate(null)
+    setError(null)
+  }, [])
+
+  const handleToCoinSelect = useCallback((coin: any) => {
+    setToCoin(coin)
+    // Clear results when changing coins
+    setConvertedAmount(null)
+    setExchangeRate(null)
+    setError(null)
+  }, [])
+
+  const handleAmountChange = useCallback((newAmount: string) => {
+    setAmount(newAmount)
+  }, [])
 
   const handlePopularPairSelect = (from: any, to: any) => {
     setFromCoin(from)
     setToCoin(to)
+    // Clear results when changing pairs
+    setConvertedAmount(null)
+    setExchangeRate(null)
+    setError(null)
+  }
+
+  const handleConvert = async () => {
+    await fetchConversionRate()
   }
 
   return (
@@ -181,19 +201,19 @@ export default function ConversionClient() {
                   
                   <div className="relative glass-card-light rounded-2xl p-6 sm:p-8 border border-border/50">
                     {/* From Currency */}
-                    <CurrencySelector
+                    <VirtualizedCoinSelector
                       label="From"
                       selectedCoin={fromCoin}
-                      onCoinSelect={setFromCoin}
+                      onCoinSelect={handleFromCoinSelect}
                       amount={amount}
-                      onAmountChange={setAmount}
+                      onAmountChange={handleAmountChange}
                     />
 
                     {/* Swap Button */}
                     <div className="flex justify-center -my-3 relative z-10">
                       <button
                         onClick={handleSwap}
-                        suppressHydrationWarning
+                        type="button"
                         className="w-12 h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center group"
                       >
                         <ArrowDownUp className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" />
@@ -201,14 +221,36 @@ export default function ConversionClient() {
                     </div>
 
                     {/* To Currency */}
-                    <CurrencySelector
+                    <VirtualizedCoinSelector
                       label="To"
                       selectedCoin={toCoin}
-                      onCoinSelect={setToCoin}
+                      onCoinSelect={handleToCoinSelect}
                       amount={convertedAmount?.toFixed(8) || "0"}
                       onAmountChange={() => {}}
                       readOnly
                     />
+
+                    {/* Convert Button */}
+                    <div className="mt-6">
+                      <button
+                        onClick={handleConvert}
+                        type="button"
+                        disabled={isLoading || !amount || parseFloat(amount) <= 0}
+                        className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground font-semibold shadow-lg hover:shadow-xl transition-all disabled:cursor-not-allowed disabled:hover:shadow-lg flex items-center justify-center gap-2"
+                      >
+                        {isLoading ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                            Converting...
+                          </>
+                        ) : (
+                          <>
+                            <ArrowDownUp className="w-4 h-4" />
+                            Convert
+                          </>
+                        )}
+                      </button>
+                    </div>
 
                     {/* Conversion Display */}
                     <ConversionDisplay

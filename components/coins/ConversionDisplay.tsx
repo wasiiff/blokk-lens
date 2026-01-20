@@ -93,7 +93,7 @@ export default function ConversionDisplay({
       {/* Last Updated */}
       <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
         <Clock className="w-3 h-3" />
-        <span>Rates updated in real-time • Cached for 30s</span>
+        <span>Rates updated every 2 minutes • Cached for optimal performance</span>
       </div>
     </div>
   )

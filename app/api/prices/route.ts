@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 
 const BASE_URL = process.env.COINGECKO_BASE_URL || "https://api.coingecko.com/api/v3"
 
-// Shared global price cache (same as prices API)
+// Global price cache - shared across all requests
 const globalPriceCache = new Map<string, { price: number; timestamp: number }>()
 const CACHE_DURATION = 180000 // 3 minutes
 const STALE_CACHE_DURATION = 1800000 // 30 minutes
+
+// Batch fetch tracker to prevent duplicate requests
+const pendingFetches = new Map<string, Promise<any>>()
 
 // Rate limiting
 const lastFetchTime = { timestamp: 0 }
@@ -18,77 +21,80 @@ async function fetchPricesFromCoinGecko(coinIds: string[]): Promise<Record<strin
   const timeSinceLastFetch = now - lastFetchTime.timestamp
   if (timeSinceLastFetch < MIN_FETCH_INTERVAL) {
     const waitTime = MIN_FETCH_INTERVAL - timeSinceLastFetch
-    console.log(`[Convert API] Waiting ${waitTime}ms before next fetch`)
+    console.log(`[Prices API] Waiting ${waitTime}ms before next fetch`)
     await new Promise(resolve => setTimeout(resolve, waitTime))
   }
   
   const uniqueIds = [...new Set(coinIds)]
   const idsParam = uniqueIds.join(',')
   
+  // Check if there's already a pending fetch for these coins
+  if (pendingFetches.has(idsParam)) {
+    console.log(`[Prices API] Reusing pending fetch for ${idsParam}`)
+    return pendingFetches.get(idsParam)!
+  }
+  
   const url = `${BASE_URL}/simple/price?ids=${idsParam}&vs_currencies=usd`
-  console.log(`[Convert API] Fetching: ${url}`)
+  console.log(`[Prices API] Fetching: ${url}`)
   
-  lastFetchTime.timestamp = Date.now()
-  
-  const response = await fetch(url, {
+  const fetchPromise = fetch(url, {
     headers: { Accept: "application/json" },
     cache: "no-store",
   })
+    .then(async (response) => {
+      lastFetchTime.timestamp = Date.now()
+      
+      if (!response.ok) {
+        throw new Error(`CoinGecko API error: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      const prices: Record<string, number> = {}
+      
+      // Update global cache
+      for (const [coinId, priceData] of Object.entries(data)) {
+        const price = (priceData as any).usd
+        if (price !== undefined) {
+          prices[coinId] = price
+          globalPriceCache.set(coinId, { price, timestamp: Date.now() })
+        }
+      }
+      
+      return prices
+    })
+    .finally(() => {
+      pendingFetches.delete(idsParam)
+    })
   
-  if (!response.ok) {
-    throw new Error(`CoinGecko API error: ${response.status}`)
-  }
-  
-  const data = await response.json()
-  const prices: Record<string, number> = {}
-  
-  // Update global cache
-  for (const [coinId, priceData] of Object.entries(data)) {
-    const price = (priceData as any).usd
-    if (price !== undefined) {
-      prices[coinId] = price
-      globalPriceCache.set(coinId, { price, timestamp: Date.now() })
-    }
-  }
-  
-  return prices
+  pendingFetches.set(idsParam, fetchPromise)
+  return fetchPromise
 }
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const fromId = searchParams.get("from")
-    const toId = searchParams.get("to")
-
-    console.log(`[Convert API] Request: from=${fromId}, to=${toId}`)
-
-    if (!fromId || !toId) {
+    const ids = searchParams.get("ids")
+    
+    if (!ids) {
       return NextResponse.json(
-        { error: "Missing from or to parameter" },
+        { error: "Missing ids parameter" },
         { status: 400 }
       )
     }
-
-    // Same coin conversion
-    if (fromId === toId) {
-      return NextResponse.json({
-        rate: 1,
-        fromPrice: 1,
-        toPrice: 1,
-        from: fromId,
-        to: toId,
-        cached: false,
-      }, {
-        headers: {
-          'Cache-Control': 'public, s-maxage=300',
-        }
-      })
+    
+    const coinIds = ids.split(',').map(id => id.trim()).filter(Boolean)
+    
+    if (coinIds.length === 0) {
+      return NextResponse.json(
+        { error: "No valid coin IDs provided" },
+        { status: 400 }
+      )
     }
-
+    
     const now = Date.now()
-    const coinIds = [fromId, toId]
     const prices: Record<string, number> = {}
     const missingIds: string[] = []
+    const staleIds: string[] = []
     
     // Check cache for each coin
     for (const coinId of coinIds) {
@@ -100,11 +106,12 @@ export async function GET(request: NextRequest) {
         if (age < CACHE_DURATION) {
           // Fresh cache
           prices[coinId] = cached.price
-          console.log(`[Convert API] Fresh cache hit for ${coinId}`)
+          console.log(`[Prices API] Fresh cache hit for ${coinId}`)
         } else if (age < STALE_CACHE_DURATION) {
           // Stale but usable
           prices[coinId] = cached.price
-          console.log(`[Convert API] Stale cache hit for ${coinId}`)
+          staleIds.push(coinId)
+          console.log(`[Prices API] Stale cache hit for ${coinId}`)
         } else {
           // Too old
           missingIds.push(coinId)
@@ -114,21 +121,13 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // If we have all prices from cache, return immediately
+    // If we have all prices from cache (fresh or stale), return immediately
     if (missingIds.length === 0) {
-      const fromPrice = prices[fromId]
-      const toPrice = prices[toId]
-      const rate = fromPrice / toPrice
-      
-      console.log(`[Convert API] All prices from cache, rate=${rate}`)
-      
+      console.log(`[Prices API] All prices from cache`)
       return NextResponse.json({
-        rate,
-        fromPrice,
-        toPrice,
-        from: fromId,
-        to: toId,
+        prices,
         cached: true,
+        stale: staleIds.length > 0,
       }, {
         headers: {
           'Cache-Control': 'public, s-maxage=180, stale-while-revalidate=1800',
@@ -143,31 +142,10 @@ export async function GET(request: NextRequest) {
       // Merge with cached prices
       Object.assign(prices, freshPrices)
       
-      const fromPrice = prices[fromId]
-      const toPrice = prices[toId]
-
-      if (!fromPrice || !toPrice) {
-        console.error(`[Convert API] Missing prices - fromPrice: ${fromPrice}, toPrice: ${toPrice}`)
-        return NextResponse.json(
-          { 
-            error: "Could not fetch prices for one or both coins",
-            details: `Missing: ${!fromPrice ? fromId : ''} ${!toPrice ? toId : ''}`,
-            availableCoins: Object.keys(prices)
-          },
-          { status: 404 }
-        )
-      }
-
-      const rate = fromPrice / toPrice
-
-      console.log(`[Convert API] Success: rate=${rate}`)
-
+      console.log(`[Prices API] Fetched ${Object.keys(freshPrices).length} fresh prices`)
+      
       return NextResponse.json({
-        rate,
-        fromPrice,
-        toPrice,
-        from: fromId,
-        to: toId,
+        prices,
         cached: false,
       }, {
         headers: {
@@ -175,10 +153,10 @@ export async function GET(request: NextRequest) {
         }
       })
     } catch (error) {
-      console.error("[Convert API] Fetch error:", error)
+      console.error(`[Prices API] Fetch error:`, error)
       
       // If we have stale cache for missing IDs, use it
-      const hasStaleForMissing = missingIds.every(id => {
+      const hasStaleForMissing = missingIds.some(id => {
         const cached = globalPriceCache.get(id)
         if (cached && now - cached.timestamp < STALE_CACHE_DURATION) {
           prices[id] = cached.price
@@ -187,18 +165,13 @@ export async function GET(request: NextRequest) {
         return false
       })
       
-      if (hasStaleForMissing && prices[fromId] && prices[toId]) {
-        const rate = prices[fromId] / prices[toId]
-        console.log(`[Convert API] Using stale cache after error, rate=${rate}`)
-        
+      if (Object.keys(prices).length > 0) {
+        console.log(`[Prices API] Returning partial data with stale cache`)
         return NextResponse.json({
-          rate,
-          fromPrice: prices[fromId],
-          toPrice: prices[toId],
-          from: fromId,
-          to: toId,
+          prices,
           cached: true,
           stale: true,
+          partial: true,
         }, {
           headers: {
             'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=1800',
@@ -212,10 +185,10 @@ export async function GET(request: NextRequest) {
       )
     }
   } catch (error) {
-    console.error("[Convert API] Unexpected error:", error)
+    console.error("[Prices API] Unexpected error:", error)
     return NextResponse.json(
       { 
-        error: "Failed to fetch conversion rate",
+        error: "Failed to fetch prices",
         details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }

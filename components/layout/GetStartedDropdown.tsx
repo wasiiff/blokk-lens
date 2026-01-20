@@ -140,7 +140,7 @@ export default function GetStartedDropdown({ isScrolled }: GetStartedDropdownPro
         </Button>
 
         {isOpen && (
-          <div className="fixed left-4 right-4 lg:right-0 lg:left-auto mt-2 lg:w-64 rounded-xl backdrop-blur-xl bg-background/95 border border-border shadow-2xl overflow-hidden z-[100]">
+          <div className="absolute left-0 mt-2 w-64 rounded-xl backdrop-blur-xl bg-background/95 border border-border shadow-2xl overflow-hidden z-[100]">
             {/* User Info */}
             <div className="p-4 border-b border-border/50">
               <div className="flex items-center gap-3">
@@ -200,7 +200,7 @@ export default function GetStartedDropdown({ isScrolled }: GetStartedDropdownPro
       </Button>
 
       {isOpen && (
-        <div className="fixed left-4 right-4 lg:right-0 lg:left-auto mt-2 lg:w-72 rounded-xl backdrop-blur-xl bg-background/95 border border-border shadow-2xl overflow-hidden z-[100]">
+        <div className="absolute left-0 mt-2 w-72 rounded-xl backdrop-blur-xl bg-background/95 border border-border shadow-2xl overflow-hidden z-[100]">
           {/* Header */}
           <div className="p-4 border-b border-border/50">
             <h3 className="text-sm font-semibold text-foreground">Choose sign in method</h3>

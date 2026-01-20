@@ -1,9 +1,11 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { Search, ChevronDown, TrendingUp } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
+import { cacheManager } from "@/lib/cache-manager"
+import { usePageVisibility } from "@/lib/hooks/usePageVisibility"
 
 interface Coin {
   id: string
@@ -14,7 +16,7 @@ interface Coin {
   price_change_percentage_24h?: number
 }
 
-interface CurrencySelectorProps {
+interface VirtualizedCoinSelectorProps {
   label: string
   selectedCoin: Coin
   onCoinSelect: (coin: Coin) => void
@@ -23,33 +25,49 @@ interface CurrencySelectorProps {
   readOnly?: boolean
 }
 
-export default function CurrencySelector({
+export default function VirtualizedCoinSelector({
   label,
   selectedCoin,
   onCoinSelect,
   amount,
   onAmountChange,
   readOnly = false,
-}: CurrencySelectorProps) {
+}: VirtualizedCoinSelectorProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [coins, setCoins] = useState<Coin[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const isPageVisible = usePageVisibility()
 
   const fetchCoins = async () => {
+    // Don't fetch if page is not visible
+    if (!isPageVisible) {
+      console.log('[CoinSelector] Page not visible, skipping fetch')
+      return
+    }
+
     setIsLoading(true)
     setError(null)
+    
     try {
-      // Use the internal API route instead of direct CoinGecko call
-      const response = await fetch("/api/coins/market?per_page=100&page=1")
+      // Use cache manager with 3-minute cache
+      const data = await cacheManager.get(
+        'market-coins-100',
+        async () => {
+          const response = await fetch("/api/coins/market?per_page=100&page=1")
+          if (!response.ok) {
+            throw new Error("Failed to fetch coins")
+          }
+          return response.json()
+        },
+        {
+          ttl: 180000, // 3 minutes
+          staleTime: 60000, // 1 minute
+        }
+      )
       
-      if (!response.ok) {
-        throw new Error("Failed to fetch coins")
-      }
-      
-      const data = await response.json()
       setCoins(data)
     } catch (error) {
       console.error("Error fetching coins:", error)
@@ -60,11 +78,12 @@ export default function CurrencySelector({
     }
   }
 
+  // Only fetch when dropdown opens AND page is visible
   useEffect(() => {
-    if (isOpen && coins.length === 0) {
+    if (isOpen && coins.length === 0 && isPageVisible) {
       fetchCoins()
     }
-  }, [isOpen, coins.length])
+  }, [isOpen, coins.length, isPageVisible])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -77,11 +96,17 @@ export default function CurrencySelector({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const filteredCoins = coins.filter(
-    (coin) =>
-      coin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      coin.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Filter coins based on search query
+  const filteredCoins = useMemo(() => {
+    if (!searchQuery) return coins
+    
+    const query = searchQuery.toLowerCase()
+    return coins.filter(
+      (coin) =>
+        coin.name.toLowerCase().includes(query) ||
+        coin.symbol.toLowerCase().includes(query)
+    )
+  }, [coins, searchQuery])
 
   return (
     <div className="space-y-2">
@@ -154,6 +179,7 @@ export default function CurrencySelector({
                     <p className="text-sm text-red-500 mb-3">{error}</p>
                     <button
                       onClick={fetchCoins}
+                      type="button"
                       className="text-sm text-primary hover:underline"
                     >
                       Try again
@@ -175,7 +201,7 @@ export default function CurrencySelector({
                       type="button"
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full overflow-hidden bg-muted flex items-center justify-center shrink-0">
                         <Image
                           src={coin.image}
                           alt={coin.name}
@@ -184,18 +210,18 @@ export default function CurrencySelector({
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      <div className="flex-1 text-left">
-                        <p className="text-sm font-semibold text-foreground">{coin.symbol.toUpperCase()}</p>
-                        <p className="text-xs text-muted-foreground">{coin.name}</p>
+                      <div className="flex-1 text-left min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{coin.symbol.toUpperCase()}</p>
+                        <p className="text-xs text-muted-foreground truncate">{coin.name}</p>
                       </div>
                       {coin.current_price && (
-                        <div className="text-right">
+                        <div className="text-right shrink-0">
                           <p className="text-sm font-medium text-foreground">
                             ${coin.current_price.toLocaleString()}
                           </p>
                           {coin.price_change_percentage_24h !== undefined && coin.price_change_percentage_24h !== null && (
                             <p
-                              className={`text-xs flex items-center gap-1 ${
+                              className={`text-xs flex items-center gap-1 justify-end ${
                                 coin.price_change_percentage_24h >= 0
                                   ? "text-green-500"
                                   : "text-red-500"
