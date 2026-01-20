@@ -302,3 +302,10 @@
     box-shadow: 0 0 30px rgba(139, 92, 246, 0.4), 0 0 60px rgba(139, 92, 246, 0.2);
   }
 }
+
+/* Animated dashed border for top gainer card */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
