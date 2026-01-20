@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/ui/logo"
-import { Star, Menu, X } from "lucide-react"
+import { Star, Menu, X, ChevronDown, ArrowDownUp, Bot } from "lucide-react"
 import { useState, useEffect } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import GetStartedDropdown from "./GetStartedDropdown"
@@ -13,6 +13,9 @@ export default function Navbar() {
   const { data: session } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [showDesktopDropdown, setShowDesktopDropdown] = useState(false)
+  const [showMobileDropdown, setShowMobileDropdown] = useState(false)
+  const [dropdownTimeout, setDropdownTimeout] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +24,27 @@ export default function Navbar() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  const toolsItems = [
+    {
+      name: "Convert",
+      href: "/convert",
+      icon: ArrowDownUp,
+      description: "Convert between cryptocurrencies"
+    },
+    {
+      name: "AI Assistant",
+      href: "/trading-assistant",
+      icon: Bot,
+      description: "AI-powered trading insights"
+    },
+    ...(session ? [{
+      name: "Watchlist",
+      href: "/favorites",
+      icon: Star,
+      description: "Track your favorite coins"
+    }] : [])
+  ]
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent">
@@ -56,29 +80,70 @@ export default function Navbar() {
                     Markets
                   </div>
                 </Link>
-                <Link href="/trading-assistant">
-                  <div className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-background/50 cursor-pointer">
-                    AI Assistant
-                  </div>
-                </Link>
-                <Link href="/convert">
-                  <div className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-background/50 cursor-pointer">
-                    Convert
-                  </div>
-                </Link>
-                {session && (
-                  <Link href="/favorites">
-                    <div className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-background/50 cursor-pointer inline-flex items-center gap-2">
-                      <Star className="w-4 h-4" />
-                      Watchlist
-                    </div>
-                  </Link>
-                )}
+
                 <Link href="/about">
                   <div className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-background/50 cursor-pointer">
                     About
                   </div>
                 </Link>
+
+                {/* More Dropdown - Hover Based */}
+                <div
+                  className="relative group"
+                  onMouseEnter={() => {
+                    if (dropdownTimeout) {
+                      clearTimeout(dropdownTimeout)
+                      setDropdownTimeout(null)
+                    }
+                    const timeout = setTimeout(() => {
+                      setShowDesktopDropdown(true)
+                    }, 150)
+                    setDropdownTimeout(timeout)
+                  }}
+                  onMouseLeave={() => {
+                    if (dropdownTimeout) {
+                      clearTimeout(dropdownTimeout)
+                      setDropdownTimeout(null)
+                    }
+                    const timeout = setTimeout(() => {
+                      setShowDesktopDropdown(false)
+                    }, 200)
+                    setDropdownTimeout(timeout)
+                  }}
+                >
+                  <button className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-background/50 cursor-pointer inline-flex items-center gap-1.5">
+                    More
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${showDesktopDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  <div className={`absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 transition-all duration-300 ease-out ${
+                    showDesktopDropdown
+                      ? 'opacity-100 translate-y-0 pointer-events-auto'
+                      : 'opacity-0 -translate-y-2 pointer-events-none'
+                  }`}>
+                    <div className="p-3 rounded-2xl backdrop-blur-2xl bg-background/98 border border-border/60 shadow-xl ring-1 ring-black/5">
+                      <div className="space-y-1">
+                        {toolsItems.map((item) => {
+                          const Icon = item.icon
+                          return (
+                            <Link key={item.name} href={item.href}>
+                              <div className="group/item flex items-start gap-3 p-3.5 rounded-xl hover:bg-accent/50 transition-all duration-200 cursor-pointer hover:shadow-sm">
+                                <div className="p-2.5 rounded-xl bg-muted shrink-0 group-hover/item:bg-muted/80 transition-colors">
+                                  <Icon className="w-4.5 h-4.5 text-foreground" />
+                                </div>
+                                <div className="flex-1 min-w-0 pt-0.5">
+                                  <div className="font-semibold text-sm text-foreground transition-colors">{item.name}</div>
+                                  <div className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.description}</div>
+                                </div>
+                              </div>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Actions */}
@@ -114,9 +179,7 @@ export default function Navbar() {
                 </div>
 
                 {/* Get Started Dropdown */}
-                <div className="hover:scale-105 transition-transform">
-                  <GetStartedDropdown isScrolled={isScrolled} />
-                </div>
+                <GetStartedDropdown isScrolled={isScrolled} />
               </div>
             </div>
           </div>
@@ -184,33 +247,40 @@ export default function Navbar() {
                     Markets
                   </div>
                 </Link>
-                <Link href="/trading-assistant">
-                  <div
-                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all rounded-xl hover:bg-background/60 relative cursor-pointer hover:scale-105"
-                    onClick={() => setMobileMenuOpen(false)}
+
+                {/* Mobile Tools Section */}
+                <div className="border-t border-border/20 mt-2 pt-2">
+                  <button
+                    onClick={() => setShowMobileDropdown(!showMobileDropdown)}
+                    className="w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all rounded-xl hover:bg-background/60 flex items-center justify-between"
                   >
-                    AI Assistant
-                  </div>
-                </Link>
-                <Link href="/convert">
-                  <div
-                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all rounded-xl hover:bg-background/60 relative cursor-pointer hover:scale-105"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Convert
-                  </div>
-                </Link>
-                {session && (
-                  <Link href="/favorites">
-                    <div
-                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all rounded-xl hover:bg-background/60 relative cursor-pointer hover:scale-105 inline-flex items-center gap-2"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Star className="w-4 h-4" />
-                      Watchlist
+                    Tools
+                    <ChevronDown className={`w-3 h-3 transition-transform ${showMobileDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showMobileDropdown && (
+                    <div className="mt-2 space-y-1 pl-2">
+                      {toolsItems.map((item) => {
+                        const Icon = item.icon
+                        return (
+                          <Link key={item.name} href={item.href}>
+                            <div
+                              className="flex items-center gap-3 px-4 py-2 text-sm rounded-xl hover:bg-background/60 transition-all cursor-pointer"
+                              onClick={() => {
+                                setMobileMenuOpen(false)
+                                setShowMobileDropdown(false)
+                              }}
+                            >
+                              <Icon className="w-4 h-4 text-primary" />
+                              <span className="text-muted-foreground hover:text-foreground">{item.name}</span>
+                            </div>
+                          </Link>
+                        )
+                      })}
                     </div>
-                  </Link>
-                )}
+                  )}
+                </div>
+
                 <Link href="/about">
                   <div
                     className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all rounded-xl hover:bg-background/60 relative cursor-pointer hover:scale-105"
