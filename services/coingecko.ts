@@ -37,7 +37,6 @@ export async function getGlobalData() {
     return fetcher(`${BASE_URL}/global`);
 }
 
-
 export async function getCoinDetails(id: string) {
     return fetcher(
         `${BASE_URL}/coins/${id}?localization=false&tickers=false&market_data=true`
@@ -46,4 +45,26 @@ export async function getCoinDetails(id: string) {
 
 export async function searchCoins(query: string) {
     return fetcher(`${BASE_URL}/search?query=${encodeURIComponent(query)}`);
+}
+
+// Get historical market data (price, volume, market cap)
+export async function getCoinMarketChart(
+    id: string,
+    vs_currency: string = 'usd',
+    days: number = 30
+) {
+    return fetcher(
+        `${BASE_URL}/coins/${id}/market_chart?vs_currency=${vs_currency}&days=${days}`
+    );
+}
+
+// Get OHLC data for charting
+export async function getCoinOHLC(
+    id: string,
+    vs_currency: string = 'usd',
+    days: number = 30
+) {
+    return fetcher(
+        `${BASE_URL}/coins/${id}/ohlc?vs_currency=${vs_currency}&days=${days}`
+    );
 }
