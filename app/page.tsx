@@ -55,7 +55,7 @@ export default function Home() {
               {/* Horizontal separator */}
               <div className="w-full border-t border-dashed border-border/60 mb-12"></div>
 
-              {/* Stats Section */}
+              {/* Stats Section with Trending */}
               <motion.section
                 initial="hidden"
                 whileInView="visible"
@@ -63,10 +63,22 @@ export default function Home() {
                 variants={containerVariants}
                 className="px-2 sm:px-4 md:px-8 lg:px-12 pb-12"
               >
-                <MarketStats />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Stats Cards - 2 rows on left */}
+                  <motion.div variants={itemVariants} className="lg:col-span-2">
+                    <MarketStats />
+                  </motion.div>
+                  
+                  {/* Trending Section on right */}
+                  <motion.div variants={itemVariants} className="lg:col-span-1">
+                    <div className="sticky top-24">
+                      <TrendingSection />
+                    </div>
+                  </motion.div>
+                </div>
               </motion.section>
 
-              {/* Main Content */}
+              {/* Main Content - Market Overview */}
               <motion.section
                 initial="hidden"
                 whileInView="visible"
@@ -81,17 +93,9 @@ export default function Home() {
                   </div>
                 </motion.div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                  <motion.div variants={itemVariants} className="lg:col-span-3">
-                    <MarketOverviewWithFavorites />
-                  </motion.div>
-                  
-                  <motion.div variants={itemVariants} className="lg:col-span-1">
-                    <div className="sticky top-24">
-                      <TrendingSection />
-                    </div>
-                  </motion.div>
-                </div>
+                <motion.div variants={itemVariants}>
+                  <MarketOverviewWithFavorites />
+                </motion.div>
               </motion.section>
 
               {/* Bottom separator */}

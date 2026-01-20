@@ -1,23 +1,74 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
-import { fetchCoinDetails } from "@/services/queries"
-import { TrendingUp, TrendingDown, ArrowLeft, ExternalLink } from "lucide-react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { fetchCoinDetails, addFavorite, removeFavorite, fetchFavorites } from "@/services/queries"
+import { TrendingUp, TrendingDown, ArrowLeft, ExternalLink, Star } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { CircuitDecoration } from "@/components/ui/decorative-svg"
 import { CoinDetailSkeleton } from "@/components/ui/skeleton"
+import { useSession } from "next-auth/react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 interface CoinDetailClientProps {
   coinId: string
 }
 
 export default function CoinDetailClient({ coinId }: CoinDetailClientProps) {
+  const { data: session } = useSession()
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  const [isFavorite, setIsFavorite] = useState(false)
+
   const { data: coin, isLoading } = useQuery({
     queryKey: ["coin", coinId],
     queryFn: () => fetchCoinDetails(coinId),
   })
+
+  const { data: favorites } = useQuery({
+    queryKey: ["favorites"],
+    queryFn: fetchFavorites,
+    enabled: !!session,
+  })
+
+  useEffect(() => {
+    if (favorites && Array.isArray(favorites)) {
+      setIsFavorite(favorites.some((fav) => fav.id === coinId))
+    } else {
+      setIsFavorite(false)
+    }
+  }, [favorites, coinId])
+
+  const addMutation = useMutation({
+    mutationFn: addFavorite,
+    onSuccess: () => {
+      setIsFavorite(true)
+      queryClient.invalidateQueries({ queryKey: ["favorites"] })
+    },
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: removeFavorite,
+    onSuccess: () => {
+      setIsFavorite(false)
+      queryClient.invalidateQueries({ queryKey: ["favorites"] })
+    },
+  })
+
+  const handleToggleFavorite = () => {
+    if (!session) {
+      router.push("/auth/login")
+      return
+    }
+
+    if (isFavorite) {
+      removeMutation.mutate(coinId)
+    } else {
+      addMutation.mutate(coinId)
+    }
+  }
 
   if (isLoading) {
     return <CoinDetailSkeleton />
@@ -60,11 +111,29 @@ export default function CoinDetailClient({ coinId }: CoinDetailClientProps) {
                     {coin.symbol}
                   </p>
                 </div>
-                {coin.market_data?.market_cap_rank && (
-                  <div className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm font-medium">
-                    Rank #{coin.market_data.market_cap_rank}
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {coin.market_data?.market_cap_rank && (
+                    <div className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm font-medium">
+                      Rank #{coin.market_data.market_cap_rank}
+                    </div>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleToggleFavorite}
+                    disabled={addMutation.isPending || removeMutation.isPending}
+                    className="h-10 w-10 p-0 rounded-full hover:bg-muted transition-all"
+                    title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                  >
+                    <Star
+                      className={`w-5 h-5 transition-all duration-300 ${
+                        isFavorite 
+                          ? "fill-yellow-500 text-yellow-500" 
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>

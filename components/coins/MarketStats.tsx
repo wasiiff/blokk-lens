@@ -88,7 +88,7 @@ export default function MarketStats() {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {stats.map((stat, idx) => {
         const colors = colorClasses[stat.color as keyof typeof colorClasses]
         const isTopGainer = stat.label === "Top Gainer"
