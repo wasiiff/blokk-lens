@@ -25,6 +25,7 @@ export const fetchCoinDetails = (id: string) =>
 export const fetchGlobalMarketData = () =>
   api<{
     data: {
+      active_cryptocurrencies?: number;
       total_market_cap: { usd: number };
       total_volume: { usd: number };
       market_cap_percentage: { [key: string]: number };

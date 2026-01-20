@@ -33,6 +33,10 @@ export async function getMarketCoins({
     );
 }
 
+export async function getGlobalData() {
+    return fetcher(`${BASE_URL}/global`);
+}
+
 
 export async function getCoinDetails(id: string) {
     return fetcher(
