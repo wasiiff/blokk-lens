@@ -15,6 +15,7 @@ interface GetStartedDropdownProps {
 export default function GetStartedDropdown({ isScrolled }: GetStartedDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isAuthenticating, setIsAuthenticating] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const { data: session } = useSession()
   const { address, isConnected } = useAccount()
@@ -25,6 +26,10 @@ export default function GetStartedDropdown({ isScrolled }: GetStartedDropdownPro
   // Determine login method
   const isWalletLogin = session?.user?.email?.includes('@wallet.blokklens')
   const isGoogleLogin = session?.user?.email && !isWalletLogin && session?.user?.email?.includes('@')
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Handle wallet authentication when connected
   useEffect(() => {
@@ -102,6 +107,23 @@ export default function GetStartedDropdown({ isScrolled }: GetStartedDropdownPro
     await signOut({ redirect: false })
     router.push('/')
     setIsOpen(false)
+  }
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <Button
+        size="sm"
+        className={`h-10 px-4 rounded-xl backdrop-blur-md transition-all duration-300 ${
+          isScrolled
+            ? 'bg-background/60 border border-border/30'
+            : 'bg-background/40 border border-border/20'
+        }`}
+        disabled
+      >
+        <div className="w-20 h-4 bg-muted/30 rounded animate-pulse" />
+      </Button>
+    )
   }
 
   if (session) {

@@ -79,32 +79,40 @@ function TrendingItemSkeleton() {
 
 function CoinDetailSkeleton() {
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="relative max-w-6xl mx-auto px-4 py-8">
       {/* Back button skeleton */}
-      <Skeleton className="h-10 w-40 rounded-lg mb-6" />
+      <div className="mb-6">
+        <Skeleton className="h-10 w-40 rounded-lg" />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main content - left side */}
         <div className="lg:col-span-2 space-y-6">
           {/* Main info card */}
-          <div className="glass-card-light border border-border rounded-xl p-6">
-            <div className="flex items-start gap-4 mb-6">
-              <Skeleton className="w-16 h-16 rounded-full" />
-              <div className="flex-1">
-                <Skeleton className="h-8 w-48 mb-2" />
-                <Skeleton className="h-4 w-24" />
+          <div className="glass-card-light border border-border rounded-xl overflow-hidden">
+            <div className="p-6 border-b border-border">
+              <div className="flex items-start gap-4">
+                <Skeleton className="w-16 h-16 rounded-full shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <Skeleton className="h-8 w-48 mb-2" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Skeleton className="h-8 w-20 rounded-full" />
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                </div>
               </div>
-              <Skeleton className="h-8 w-24 rounded-full" />
             </div>
 
-            <div className="space-y-6">
+            <div className="p-6 space-y-6">
               {/* Price section */}
               <div>
                 <div className="flex items-baseline gap-3 mb-2">
-                  <Skeleton className="h-10 w-40" />
-                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-10 w-48" />
+                  <Skeleton className="h-7 w-24 rounded-md" />
                 </div>
-                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-20" />
               </div>
 
               {/* Stats grid */}
@@ -125,13 +133,48 @@ function CoinDetailSkeleton() {
             </div>
           </div>
 
+          {/* Chart card */}
+          <div className="glass-card-light border border-border rounded-xl overflow-hidden">
+            <div className="p-6 border-b border-border">
+              <Skeleton className="h-6 w-32" />
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {/* Chart skeleton */}
+                <div className="h-[300px] flex items-end gap-2">
+                  {Array.from({ length: 30 }).map((_, i) => (
+                    <Skeleton 
+                      key={i} 
+                      className="flex-1 rounded-t-sm" 
+                      style={{ height: `${Math.random() * 60 + 40}%` }}
+                    />
+                  ))}
+                </div>
+                {/* Chart controls */}
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-12 rounded-md" />
+                    <Skeleton className="h-8 w-12 rounded-md" />
+                    <Skeleton className="h-8 w-12 rounded-md" />
+                    <Skeleton className="h-8 w-12 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Description card */}
-          <div className="glass-card-light border border-border rounded-xl p-6">
-            <Skeleton className="h-6 w-32 mb-4" />
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
+          <div className="glass-card-light border border-border rounded-xl overflow-hidden">
+            <div className="p-6 border-b border-border">
+              <Skeleton className="h-6 w-40" />
+            </div>
+            <div className="p-6">
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-11/12" />
+                <Skeleton className="h-4 w-4/5" />
+              </div>
             </div>
           </div>
         </div>
@@ -139,18 +182,28 @@ function CoinDetailSkeleton() {
         {/* Sidebar - right side */}
         <div className="space-y-6">
           {/* Links card */}
-          <div className="glass-card-light border border-border rounded-xl p-6">
-            <Skeleton className="h-6 w-20 mb-4" />
-            <div className="space-y-3">
-              <Skeleton className="h-12 w-full rounded-lg" />
-              <Skeleton className="h-12 w-full rounded-lg" />
+          <div className="glass-card-light border border-border rounded-xl overflow-hidden">
+            <div className="p-6 border-b border-border">
+              <Skeleton className="h-6 w-20" />
+            </div>
+            <div className="p-6 space-y-2">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-4" />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-4" />
+              </div>
             </div>
           </div>
 
           {/* Market stats card */}
-          <div className="glass-card-light border border-border rounded-xl p-6">
-            <Skeleton className="h-6 w-28 mb-4" />
-            <div className="space-y-4">
+          <div className="glass-card-light border border-border rounded-xl overflow-hidden">
+            <div className="p-6 border-b border-border">
+              <Skeleton className="h-6 w-28" />
+            </div>
+            <div className="p-6 space-y-4">
               <div className="flex justify-between items-center">
                 <Skeleton className="h-4 w-16" />
                 <Skeleton className="h-4 w-24" />
@@ -160,8 +213,8 @@ function CoinDetailSkeleton() {
                 <Skeleton className="h-4 w-24" />
               </div>
               <div className="flex justify-between items-center">
-                <Skeleton className="h-4 w-20" />
                 <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-28" />
               </div>
             </div>
           </div>

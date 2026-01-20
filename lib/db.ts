@@ -42,3 +42,6 @@ export async function connectDB() {
         throw error;
     }
 }
+
+// Default export for backward compatibility
+export default connectDB;

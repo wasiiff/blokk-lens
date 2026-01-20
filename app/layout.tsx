@@ -10,7 +10,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "BLOKK LENs — Real-time Cryptocurrency Tracking",
+  title: "BLOKK LENS — Real-time Cryptocurrency Tracking",
   description: "Track real-time cryptocurrency prices, market caps, and trends. Save your favorite coins and stay updated.",
   icons: {
     icon: [

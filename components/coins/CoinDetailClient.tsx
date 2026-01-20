@@ -11,6 +11,8 @@ import { CoinDetailSkeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import CoinAnalysisChat from "@/components/trading-assistant/CoinAnalysisChat"
+import PriceChart from "@/components/trading-assistant/PriceChart"
 
 interface CoinDetailClientProps {
   coinId: string
@@ -117,6 +119,11 @@ export default function CoinDetailClient({ coinId }: CoinDetailClientProps) {
                       Rank #{coin.market_data.market_cap_rank}
                     </div>
                   )}
+                  <CoinAnalysisChat 
+                    coinId={coinId} 
+                    coinSymbol={coin.symbol} 
+                    coinName={coin.name}
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
@@ -188,6 +195,8 @@ export default function CoinDetailClient({ coinId }: CoinDetailClientProps) {
               </div>
             </CardContent>
           </Card>
+
+          <PriceChart coinId={coinId} days={30} />
 
           {coin.description?.en && (
             <Card className="glass-card-light border border-border">

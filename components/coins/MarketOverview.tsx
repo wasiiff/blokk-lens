@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { fetchMarketCoins, searchMarketCoins, fetchFavorites, addFavorite, removeFavorite } from "@/services/queries"
+import { fetchMarketCoins, searchMarketCoins, fetchFavorites, addFavorite, removeFavorite, fetchGlobalMarketData } from "@/services/queries"
 import { useSession } from "next-auth/react"
 import CoinCard from "./CoinCard"
 import { CoinCardSkeleton } from "@/components/ui/skeleton"
@@ -11,7 +11,10 @@ import { ChevronLeft, ChevronRight, Filter } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 const ITEMS_PER_PAGE = 20
-const TOTAL_PAGES = 100 // CoinGecko supports up to ~10,000 coins
+// CoinGecko has 13,690+ coins, but API limits to 250 per page and ~10,000 total accessible via pagination
+// We'll calculate total pages dynamically from global data
+const MAX_COINS_ACCESSIBLE = 10000 // CoinGecko API limitation
+const DEFAULT_TOTAL_PAGES = Math.ceil(MAX_COINS_ACCESSIBLE / ITEMS_PER_PAGE) // 500 pages
 
 const CHAIN_FILTERS = [
   { id: "all", name: "All Chains", icon: "🌐", keywords: [] },
@@ -33,6 +36,7 @@ export default function MarketOverview({ searchQuery = "" }: MarketOverviewProps
   const queryClient = useQueryClient()
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(DEFAULT_TOTAL_PAGES)
   // const [selectedChain, setSelectedChain] = useState("all") // Commented out for future use
 
   const isSearching = searchQuery.trim().length > 0
@@ -42,6 +46,23 @@ export default function MarketOverview({ searchQuery = "" }: MarketOverviewProps
   useEffect(() => {
     setCurrentPage(1)
   }, [searchQuery])
+
+  // Fetch global data to get total coin count
+  const { data: globalData } = useQuery({
+    queryKey: ["global-market-data"],
+    queryFn: fetchGlobalMarketData,
+  })
+
+  // Calculate total pages based on active cryptocurrencies
+  useEffect(() => {
+    if (globalData?.data?.active_cryptocurrencies) {
+      const activeCryptos = globalData.data.active_cryptocurrencies
+      // CoinGecko API limits to ~10,000 coins accessible via pagination
+      const accessibleCoins = Math.min(activeCryptos, MAX_COINS_ACCESSIBLE)
+      const calculatedPages = Math.ceil(accessibleCoins / ITEMS_PER_PAGE)
+      setTotalPages(calculatedPages)
+    }
+  }, [globalData])
 
   // Fetch regular market coins for browsing
   const { data: marketCoins, isLoading: marketCoinsLoading } = useQuery({
@@ -120,7 +141,11 @@ export default function MarketOverview({ searchQuery = "" }: MarketOverviewProps
 
   const coins = isSearching ? searchCoinsData : marketCoins
   const isLoading = isSearching ? (searchLoading || searchCoinsDataLoading) : marketCoinsLoading
-  const displayTotalPages = TOTAL_PAGES // isFiltering ? totalFilteredPages : TOTAL_PAGES
+  const displayTotalPages = totalPages // isFiltering ? totalFilteredPages : totalPages
+  
+  // Calculate total coins accessible
+  const totalCoinsAccessible = totalPages * ITEMS_PER_PAGE
+  const actualTotalCoins = globalData?.data?.active_cryptocurrencies || totalCoinsAccessible
 
   const { data: favorites } = useQuery({
     queryKey: ["favorites"],
