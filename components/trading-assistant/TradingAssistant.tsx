@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -77,7 +77,7 @@ interface TradingAssistantProps {
   coinSymbol?: string;
 }
 
-export default function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
+function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
   const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -92,29 +92,29 @@ export default function TradingAssistant({ coinId, coinSymbol }: TradingAssistan
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
-  const handleSuggestedPrompt = (prompt: string) => {
+  const handleSuggestedPrompt = useCallback((prompt: string) => {
     setInputValue(prompt);
-  };
+  }, []);
 
-  const handleCopy = async (content: string, index: number) => {
+  const handleCopy = useCallback(async (content: string, index: number) => {
     await navigator.clipboard.writeText(content);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 2000);
-  };
+  }, []);
 
-  const handleInputChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChangeLocal = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
-  };
+  }, []);
 
-  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
     
@@ -192,9 +192,9 @@ export default function TradingAssistant({ coinId, coinSymbol }: TradingAssistan
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  };
+  }, [inputValue, isLoading, messages, sessionId, coinId]);
 
-  const showSuggestions = messages.length <= 1;
+  const showSuggestions = useMemo(() => messages.length <= 1, [messages.length]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] max-w-5xl mx-auto">
@@ -361,3 +361,5 @@ export default function TradingAssistant({ coinId, coinSymbol }: TradingAssistan
     </div>
   );
 }
+
+export default memo(TradingAssistant);

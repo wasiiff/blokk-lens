@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useCallback, memo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { signIn } from "next-auth/react"
@@ -16,7 +16,7 @@ import WalletConnectButton from "./WalletConnectButton"
 
 type FormData = z.infer<typeof loginSchema>
 
-export default function LoginForm() {
+function LoginForm() {
   const {
     register,
     handleSubmit,
@@ -28,7 +28,7 @@ export default function LoginForm() {
 
   const router = useRouter()
 
-  async function onSubmit(data: FormData) {
+  const onSubmit = useCallback(async (data: FormData) => {
     setError(null)
     const res = await signIn("credentials", {
       redirect: false,
@@ -41,7 +41,15 @@ export default function LoginForm() {
     } else if (res?.ok) {
       router.push("/")
     }
-  }
+  }, [router])
+
+  const togglePassword = useCallback(() => {
+    setShowPassword((s) => !s)
+  }, [])
+
+  const handleGoogleSignIn = useCallback(() => {
+    signIn("google", { callbackUrl: "/" })
+  }, [])
 
   return (
     <div className="w-full max-w-md">
@@ -102,7 +110,7 @@ export default function LoginForm() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((s) => !s)}
+                  onClick={togglePassword}
                   className="absolute right-4 top-1/2 -translate-y-1/2 card-text-muted hover:text-white dark:hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -154,7 +162,7 @@ export default function LoginForm() {
               type="button"
               variant="outline"
               className="w-full h-12 bg-white/5 dark:bg-background border-white/20 dark:border-border hover:bg-white/10 dark:hover:bg-muted hover:border-white/30 dark:hover:border-border/80 rounded-xl transition-all"
-              onClick={() => signIn("google", { callbackUrl: "/" })}
+              onClick={handleGoogleSignIn}
             >
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -181,3 +189,5 @@ export default function LoginForm() {
     </div>
   )
 }
+
+export default memo(LoginForm)

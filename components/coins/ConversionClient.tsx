@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo, memo } from "react"
 import { motion } from "framer-motion"
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
@@ -11,7 +11,7 @@ import { BackgroundGrid, LeftDecorativePattern, RightDecorativePattern, Vertical
 import { ArrowDownUp } from "lucide-react"
 import { usePageVisibility } from "@/lib/hooks/usePageVisibility"
 
-export default function ConversionClient() {
+function ConversionClient() {
   const [fromCoin, setFromCoin] = useState({ 
     id: "bitcoin", 
     symbol: "BTC", 
@@ -31,7 +31,7 @@ export default function ConversionClient() {
   const [error, setError] = useState<string | null>(null)
   const isPageVisible = usePageVisibility()
 
-  const fetchConversionRate = async () => {
+  const fetchConversionRate = useCallback(async () => {
     // Don't fetch if page is not visible
     if (!isPageVisible) {
       console.log('[Convert] Page not visible, skipping conversion')
@@ -106,9 +106,9 @@ export default function ConversionClient() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [isPageVisible, amount, fromCoin, toCoin])
 
-  const handleSwap = () => {
+  const handleSwap = useCallback(() => {
     const temp = fromCoin
     setFromCoin(toCoin)
     setToCoin(temp)
@@ -116,7 +116,7 @@ export default function ConversionClient() {
     setConvertedAmount(null)
     setExchangeRate(null)
     setError(null)
-  }
+  }, [fromCoin, toCoin])
 
   const handleFromCoinSelect = useCallback((coin: any) => {
     setFromCoin(coin)
@@ -138,18 +138,24 @@ export default function ConversionClient() {
     setAmount(newAmount)
   }, [])
 
-  const handlePopularPairSelect = (from: any, to: any) => {
+  const handlePopularPairSelect = useCallback((from: any, to: any) => {
     setFromCoin(from)
     setToCoin(to)
     // Clear results when changing pairs
     setConvertedAmount(null)
     setExchangeRate(null)
     setError(null)
-  }
+  }, [])
 
-  const handleConvert = async () => {
+  const handleConvert = useCallback(async () => {
     await fetchConversionRate()
-  }
+  }, [fetchConversionRate])
+  
+  // Memoize button disabled state
+  const isConvertDisabled = useMemo(() => 
+    isLoading || !amount || parseFloat(amount) <= 0,
+    [isLoading, amount]
+  )
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -235,7 +241,7 @@ export default function ConversionClient() {
                       <button
                         onClick={handleConvert}
                         type="button"
-                        disabled={isLoading || !amount || parseFloat(amount) <= 0}
+                        disabled={isConvertDisabled}
                         className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground font-semibold shadow-lg hover:shadow-xl transition-all disabled:cursor-not-allowed disabled:hover:shadow-lg flex items-center justify-center gap-2"
                       >
                         {isLoading ? (
@@ -283,3 +289,5 @@ export default function ConversionClient() {
     </div>
   )
 }
+
+export default memo(ConversionClient)

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useCallback, memo } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { signIn } from "next-auth/react"
@@ -15,7 +15,7 @@ import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Check } from "lucid
 
 type FormData = z.infer<typeof signupSchema>
 
-export default function SignupForm() {
+function SignupForm() {
   const {
     register,
     handleSubmit,
@@ -27,7 +27,7 @@ export default function SignupForm() {
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
 
-  async function onSubmit(data: FormData) {
+  const onSubmit = useCallback(async (data: FormData) => {
     setError(null)
     setSuccess(null)
 
@@ -49,7 +49,15 @@ export default function SignupForm() {
     } catch (err) {
       setError("Network error. Please try again.")
     }
-  }
+  }, [router])
+
+  const togglePassword = useCallback(() => {
+    setShowPassword((s) => !s)
+  }, [])
+
+  const handleGoogleSignIn = useCallback(() => {
+    signIn("google", { callbackUrl: "/" })
+  }, [])
 
   return (
     <div className="w-full max-w-md">
@@ -127,7 +135,7 @@ export default function SignupForm() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((s) => !s)}
+                  onClick={togglePassword}
                   className="absolute right-4 top-1/2 -translate-y-1/2 card-text-muted hover:text-white dark:hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -187,7 +195,7 @@ export default function SignupForm() {
               type="button"
               variant="outline"
               className="w-full h-12 bg-white/5 dark:bg-background border-white/20 dark:border-border hover:bg-white/10 dark:hover:bg-muted hover:border-white/30 dark:hover:border-border/80 rounded-xl transition-all"
-              onClick={() => signIn("google", { callbackUrl: "/" })}
+              onClick={handleGoogleSignIn}
             >
               <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -211,3 +219,5 @@ export default function SignupForm() {
     </div>
   )
 }
+
+export default memo(SignupForm)
