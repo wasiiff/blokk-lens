@@ -16,11 +16,11 @@ export default async function CoinDetailPage({ params }: { params: Promise<{ id:
           <BorderBeam borderWidth={1} className="from-transparent via-foreground/30 to-transparent"/>
           
           <div className="relative flex flex-col justify-start items-center w-full">
-            <div className="w-full max-w-none px-4 sm:px-6 md:px-8 lg:px-12 lg:max-w-[1270px] lg:w-[1360px] relative flex flex-col justify-start items-start">
+            <div className="w-full max-w-none px-2 sm:px-4 md:px-6 lg:px-8 lg:max-w-[1270px] relative flex flex-col justify-start items-start">
               <div className="self-stretch pt-[9px] overflow-hidden flex flex-col justify-center items-start relative z-10 w-full">
                 <Navbar />
 
-                <main className="w-full">
+                <main className="w-full px-2 sm:px-0">
                   <Suspense
                     fallback={
                       <div className="flex items-center justify-center min-h-[60vh]">

@@ -9,10 +9,12 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { CircuitDecoration } from "@/components/ui/decorative-svg"
 import { CoinDetailSkeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
-import { useState, useEffect, useCallback, useMemo, memo } from "react"
+import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from "react"
 import { useRouter } from "next/navigation"
 import CoinAnalysisChat from "@/components/trading-assistant/CoinAnalysisChat"
-import PriceChart from "@/components/trading-assistant/PriceChart"
+
+// Lazy load heavy components
+const PriceChart = lazy(() => import("@/components/trading-assistant/PriceChart"))
 
 interface CoinDetailClientProps {
   coinId: string
@@ -28,6 +30,8 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
     queryKey: ["coin", coinId],
     queryFn: () => fetchCoinDetails(coinId),
     staleTime: 60000, // 1 minute
+    gcTime: 300000, // 5 minutes cache
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
   })
 
   const { data: favorites } = useQuery({
@@ -35,6 +39,8 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
     queryFn: fetchFavorites,
     enabled: !!session,
     staleTime: 60000, // 1 minute
+    gcTime: 300000, // 5 minutes cache
+    refetchOnWindowFocus: false,
   })
 
   useEffect(() => {
@@ -47,17 +53,31 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
 
   const addMutation = useMutation({
     mutationFn: addFavorite,
-    onSuccess: () => {
+    onMutate: async () => {
+      // Optimistic update
       setIsFavorite(true)
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["favorites"] })
+    },
+    onError: () => {
+      // Rollback on error
+      setIsFavorite(false)
     },
   })
 
   const removeMutation = useMutation({
     mutationFn: removeFavorite,
-    onSuccess: () => {
+    onMutate: async () => {
+      // Optimistic update
       setIsFavorite(false)
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["favorites"] })
+    },
+    onError: () => {
+      // Rollback on error
+      setIsFavorite(true)
     },
   })
 
@@ -126,7 +146,9 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
 
   const description = useMemo(() => {
     if (!coin?.description?.en) return null
-    return coin.description.en.split(". ").slice(0, 3).join(". ") + "."
+    // Sanitize and truncate description for performance
+    const text = coin.description.en.replace(/<[^>]*>/g, '').split(". ").slice(0, 3).join(". ") + "."
+    return text
   }, [coin])
 
   if (isLoading) {
@@ -136,40 +158,40 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
   if (!coin) return null
 
   return (
-    <div className="relative max-w-6xl mx-auto px-4 py-8">
-      <div className="absolute -right-20 top-0 pointer-events-none opacity-10">
+    <div className="relative w-full py-4 sm:py-6 md:py-8">
+      <div className="absolute -right-20 top-0 pointer-events-none opacity-10 hidden lg:block">
         <CircuitDecoration className="w-96 h-96" />
       </div>
 
       <Link href="/">
-        <Button variant="ghost" className="mb-6 flex items-center gap-2">
+        <Button variant="ghost" className="mb-4 sm:mb-6 flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" />
           Back to Markets
         </Button>
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Card className="glass-card-light border border-border">
-            <CardHeader>
-              <div className="flex items-start gap-4">
+            <CardHeader className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start gap-4">
                 <img
                   src={coin.image?.large}
                   alt={coin.name}
-                  className="w-16 h-16 rounded-full"
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full"
                   loading="lazy"
                 />
-                <div className="flex-1">
-                  <CardTitle className="text-3xl card-text mb-1">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-2xl sm:text-3xl card-text mb-1 break-words">
                     {coin.name}
                   </CardTitle>
                   <p className="card-text-muted uppercase text-sm">
                     {coin.symbol}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {coin.market_data?.market_cap_rank && (
-                    <div className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-sm font-medium">
+                    <div className="px-2 sm:px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs sm:text-sm font-medium whitespace-nowrap">
                       Rank #{coin.market_data.market_cap_rank}
                     </div>
                   )}
@@ -183,11 +205,11 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                     size="sm"
                     onClick={handleToggleFavorite}
                     disabled={addMutation.isPending || removeMutation.isPending}
-                    className="h-10 w-10 p-0 rounded-full hover:bg-muted transition-all"
+                    className="h-8 w-8 sm:h-10 sm:w-10 p-0 rounded-full hover:bg-muted transition-all"
                     title={isFavorite ? "Remove from favorites" : "Add to favorites"}
                   >
                     <Star
-                      className={`w-5 h-5 transition-all duration-300 ${
+                      className={`w-4 h-4 sm:w-5 sm:h-5 transition-all duration-300 ${
                         isFavorite 
                           ? "fill-yellow-500 text-yellow-500" 
                           : "text-muted-foreground hover:text-foreground"
@@ -197,46 +219,46 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
+            <CardContent className="p-4 sm:p-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <div className="flex items-baseline gap-3 mb-2">
-                    <span className="text-4xl font-bold card-text">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 mb-2">
+                    <span className="text-2xl sm:text-3xl md:text-4xl font-bold card-text break-all">
                       ${currentPrice.toLocaleString()}
                     </span>
                     <div
-                      className={`flex items-center gap-1 text-lg font-medium ${
+                      className={`flex items-center gap-1 text-base sm:text-lg font-medium ${
                         isPositive ? "text-green-400" : "text-red-400"
                       }`}
                     >
                       {isPositive ? (
-                        <TrendingUp className="w-5 h-5" />
+                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
                       ) : (
-                        <TrendingDown className="w-5 h-5" />
+                        <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />
                       )}
                       {Math.abs(priceChange).toFixed(2)}%
                     </div>
                   </div>
-                  <p className="text-sm card-text-muted">24h change</p>
+                  <p className="text-xs sm:text-sm card-text-muted">24h change</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-4 border-t border-border">
                   <div>
-                    <p className="text-sm card-text-muted mb-1">Market Cap</p>
-                    <p className="text-lg font-semibold card-text">
+                    <p className="text-xs sm:text-sm card-text-muted mb-1">Market Cap</p>
+                    <p className="text-base sm:text-lg font-semibold card-text break-all">
                       ${marketCap}B
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm card-text-muted mb-1">Circulating Supply</p>
-                    <p className="text-lg font-semibold card-text">
+                    <p className="text-xs sm:text-sm card-text-muted mb-1">Circulating Supply</p>
+                    <p className="text-base sm:text-lg font-semibold card-text break-all">
                       {circulatingSupply}
                     </p>
                   </div>
                   {totalSupply && (
-                    <div>
-                      <p className="text-sm card-text-muted mb-1">Total Supply</p>
-                      <p className="text-lg font-semibold card-text">
+                    <div className="col-span-2 sm:col-span-1">
+                      <p className="text-xs sm:text-sm card-text-muted mb-1">Total Supply</p>
+                      <p className="text-base sm:text-lg font-semibold card-text break-all">
                         {totalSupply}
                       </p>
                     </div>
@@ -246,38 +268,45 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
             </CardContent>
           </Card>
 
-          <PriceChart coinId={coinId} days={30} />
+          <Suspense fallback={
+            <Card className="glass-card-light border border-border p-4 sm:p-6">
+              <div className="h-[250px] sm:h-[300px] md:h-[350px] flex items-center justify-center">
+                <div className="animate-pulse text-muted-foreground text-sm">Loading chart...</div>
+              </div>
+            </Card>
+          }>
+            <PriceChart coinId={coinId} days={30} />
+          </Suspense>
 
           {description && (
             <Card className="glass-card-light border border-border">
-              <CardHeader>
-                <CardTitle className="card-text">About {coin.name}</CardTitle>
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="card-text text-lg sm:text-xl">About {coin.name}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div
-                  className="card-text prose prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{ __html: description }}
-                />
+              <CardContent className="p-4 sm:p-6">
+                <p className="card-text text-sm sm:text-base leading-relaxed">
+                  {description}
+                </p>
               </CardContent>
             </Card>
           )}
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <Card className="glass-card-light border border-border">
-            <CardHeader>
-              <CardTitle className="card-text">Links</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="card-text text-lg sm:text-xl">Links</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-2 p-4 sm:p-6">
               {coin.links?.homepage?.[0] && (
                 <a
                   href={coin.links.homepage[0]}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors"
                 >
-                  <span className="card-text">Website</span>
-                  <ExternalLink className="w-4 h-4 card-text-muted" />
+                  <span className="card-text text-sm sm:text-base">Website</span>
+                  <ExternalLink className="w-4 h-4 card-text-muted flex-shrink-0" />
                 </a>
               )}
               {coin.links?.blockchain_site?.[0] && (
@@ -285,35 +314,35 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                   href={coin.links.blockchain_site[0]}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors"
                 >
-                  <span className="card-text">Explorer</span>
-                  <ExternalLink className="w-4 h-4 card-text-muted" />
+                  <span className="card-text text-sm sm:text-base">Explorer</span>
+                  <ExternalLink className="w-4 h-4 card-text-muted flex-shrink-0" />
                 </a>
               )}
             </CardContent>
           </Card>
 
           <Card className="glass-card-light border border-border">
-            <CardHeader>
-              <CardTitle className="card-text">Market Stats</CardTitle>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="card-text text-lg sm:text-xl">Market Stats</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="card-text-muted text-sm">24h High</span>
-                <span className="card-text font-medium">
+            <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">24h High</span>
+                <span className="card-text font-medium text-sm sm:text-base break-all text-right">
                   ${high24h}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="card-text-muted text-sm">24h Low</span>
-                <span className="card-text font-medium">
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">24h Low</span>
+                <span className="card-text font-medium text-sm sm:text-base break-all text-right">
                   ${low24h}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="card-text-muted text-sm">All-Time High</span>
-                <span className="card-text font-medium">
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">All-Time High</span>
+                <span className="card-text font-medium text-sm sm:text-base break-all text-right">
                   ${ath}
                 </span>
               </div>
