@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/ui/logo"
-import { Star, Menu, X, ChevronDown, ArrowDownUp, Bot } from "lucide-react"
+import { Star, Menu, X, ChevronDown, ArrowDownUp, Bot, Wallet } from "lucide-react"
 import { useState, useEffect } from "react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import GetStartedDropdown from "./GetStartedDropdown"
@@ -27,12 +27,21 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  const walletAddress = mounted && session ? (session.user as any).walletAddress : null
+
   const toolsItems = [
     {
       name: "Convert",
       href: "/convert",
       icon: ArrowDownUp,
       description: "Convert between cryptocurrencies",
+      available: true
+    },
+    {
+      name: "Portfolio",
+      href: "/portfolio",
+      icon: Wallet,
+      description: "View your crypto portfolio",
       available: true
     },
     {
