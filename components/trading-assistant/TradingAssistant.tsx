@@ -23,10 +23,15 @@ import {
   PieChart,
   Menu,
   X,
+  MessageSquare,
+  Trash2,
+  Clock,
+  Bitcoin,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChatMarkdown from './ChatMarkdown';
+import { useSession } from 'next-auth/react';
 
 interface SuggestedPrompt {
   icon: React.ReactNode;
@@ -42,9 +47,17 @@ interface Message {
   feedback?: 'up' | 'down' | null;
 }
 
+interface ChatSession {
+  sessionId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: Message[];
+}
+
 const SUGGESTED_PROMPTS: SuggestedPrompt[] = [
   {
-    icon: <TrendingUp className="w-5 h-5" />,
+    icon: <Bitcoin className="w-5 h-5" />,
     title: "Bitcoin Analysis",
     prompt: "Analyze the current Bitcoin price trend and provide trading insights",
     gradient: "from-orange-500 to-amber-500",
@@ -56,15 +69,9 @@ const SUGGESTED_PROMPTS: SuggestedPrompt[] = [
     gradient: "from-blue-500 to-cyan-500",
   },
   {
-    icon: <Sparkles className="w-5 h-5" />,
-    title: "Market Prediction",
-    prompt: "Based on historical data, what's your prediction for Solana in the next week?",
-    gradient: "from-purple-500 to-pink-500",
-  },
-  {
     icon: <Target className="w-5 h-5" />,
     title: "Entry & Exit Points",
-    prompt: "What are good entry and exit points for Cardano right now?",
+    prompt: "What are good entry and exit points for the top 10 cryptocurrencies?",
     gradient: "from-emerald-500 to-teal-500",
   },
   {
@@ -78,6 +85,12 @@ const SUGGESTED_PROMPTS: SuggestedPrompt[] = [
     title: "Portfolio Strategy",
     prompt: "Suggest a balanced crypto portfolio for moderate risk tolerance",
     gradient: "from-indigo-500 to-violet-500",
+  },
+  {
+    icon: <TrendingUp className="w-5 h-5" />,
+    title: "Market Trends",
+    prompt: "What are the current market trends and which coins show strong momentum?",
+    gradient: "from-purple-500 to-pink-500",
   },
 ];
 
@@ -105,12 +118,15 @@ interface TradingAssistantProps {
 }
 
 function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
-  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const { data: session } = useSession();
+  const [sessionId, setSessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -122,10 +138,79 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
         role: 'assistant',
         content: coinId 
           ? `Hey! 👋 Ready to analyze **${coinSymbol?.toUpperCase()}** for you.\n\nI can provide technical analysis, price predictions, and trading strategies. What would you like to explore?`
-          : `Hey! 👋 I'm your **AI Trading Companion**.\n\nI specialize in **technical analysis**, **price predictions**, **trading strategies**, and **risk management** for cryptocurrencies.\n\nSelect a topic below or ask me anything!`,
+          : `Hey! 👋 I'm your **AI Trading Assistant** powered by BlokLens.\n\nI specialize in:\n- 📊 **Technical Analysis** - RSI, MACD, Moving Averages\n- 📈 **Price Predictions** - Based on historical patterns\n- 🎯 **Entry/Exit Points** - Strategic trading levels\n- ⚠️ **Risk Assessment** - Support/resistance and volatility\n- 💡 **Portfolio Advice** - Diversification strategies\n\nWhat would you like to know about crypto trading?`,
       }]);
     }
   }, [coinId, coinSymbol, messages.length]);
+
+  // Load chat history for authenticated users
+  useEffect(() => {
+    if (session?.user && !loadingHistory) {
+      loadChatHistory();
+    }
+  }, [session]);
+
+  const loadChatHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const res = await fetch('/api/chat-history');
+      if (res.ok) {
+        const data = await res.json();
+        setChatHistory(data);
+      }
+    } catch (error) {
+      console.error('Failed to load chat history:', error);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const loadChatSession = async (sessionId: string) => {
+    try {
+      const res = await fetch(`/api/chat-history?sessionId=${sessionId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages || []);
+        setSessionId(sessionId);
+        setSidebarOpen(false);
+      }
+    } catch (error) {
+      console.error('Failed to load chat session:', error);
+    }
+  };
+
+  const deleteChatSession = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Delete this conversation?')) return;
+    
+    try {
+      const res = await fetch(`/api/chat-history?sessionId=${sessionId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setChatHistory(prev => prev.filter(chat => chat.sessionId !== sessionId));
+        if (sessionId === sessionId) {
+          startNewChat();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to delete chat session:', error);
+    }
+  };
+
+  const startNewChat = () => {
+    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setSessionId(newSessionId);
+    setMessages([{
+      id: 'welcome',
+      role: 'assistant',
+      content: coinId 
+        ? `Hey! 👋 Ready to analyze **${coinSymbol?.toUpperCase()}** for you.\n\nI can provide technical analysis, price predictions, and trading strategies. What would you like to explore?`
+        : `Hey! 👋 I'm your **AI Trading Assistant** powered by BlokLens.\n\nI specialize in:\n- 📊 **Technical Analysis** - RSI, MACD, Moving Averages\n- 📈 **Price Predictions** - Based on historical patterns\n- 🎯 **Entry/Exit Points** - Strategic trading levels\n- ⚠️ **Risk Assessment** - Support/resistance and volatility\n- 💡 **Portfolio Advice** - Diversification strategies\n\nWhat would you like to know about crypto trading?`,
+    }]);
+    setInputValue('');
+    setSidebarOpen(false);
+  };
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -267,53 +352,93 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
           <div className="p-4 border-b border-border/50">
             <h1 className="text-lg font-bold flex items-center gap-2">
               <Bot className="w-5 h-5 text-primary" />
-              CHAT A.I+
+              BlokLens AI
             </h1>
+            <p className="text-xs text-muted-foreground mt-1">Trading Assistant</p>
           </div>
 
           {/* New Chat Button */}
           <div className="p-4">
             <Button
-              onClick={() => {
-                setMessages([{
-                  id: 'welcome',
-                  role: 'assistant',
-                  content: coinId 
-                    ? `Hey! 👋 Ready to analyze **${coinSymbol?.toUpperCase()}** for you.\n\nI can provide technical analysis, price predictions, and trading strategies. What would you like to explore?`
-                    : `Hey! 👋 I'm your **AI Trading Companion**.\n\nI specialize in **technical analysis**, **price predictions**, **trading strategies**, and **risk management** for cryptocurrencies.\n\nSelect a topic below or ask me anything!`,
-                }]);
-                setInputValue('');
-                setSidebarOpen(false);
-              }}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl gap-2"
+              onClick={startNewChat}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl gap-2 shadow-lg"
             >
-              <span className="text-xl">+</span>
+              <MessageSquare className="w-4 h-4" />
               New chat
             </Button>
           </div>
 
           {/* Conversation History */}
-          <div className="flex-1 overflow-y-auto px-4">
-            <div className="text-xs text-muted-foreground mb-2">Your conversations</div>
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-left mb-1 rounded-lg hover:bg-muted/50"
-              onClick={() => {}}
-            >
-              <span className="truncate text-sm">Clear All</span>
-            </Button>
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
+            <div className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
+              <Clock className="w-3 h-3" />
+              Recent Conversations
+            </div>
+            
+            {loadingHistory ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-12 bg-muted/30 rounded-lg animate-pulse" />
+                ))}
+              </div>
+            ) : chatHistory.length > 0 ? (
+              <div className="space-y-1">
+                {chatHistory.map((chat) => (
+                  <div
+                    key={chat.sessionId}
+                    className={cn(
+                      "group relative flex items-center gap-2 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors",
+                      chat.sessionId === sessionId && "bg-muted/70"
+                    )}
+                    onClick={() => loadChatSession(chat.sessionId)}
+                  >
+                    <MessageSquare className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{chat.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(chat.updatedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => deleteChatSession(chat.sessionId, e)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <MessageSquare className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
+                <p className="text-xs text-muted-foreground">No conversations yet</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">Start chatting to see history</p>
+              </div>
+            )}
           </div>
 
           {/* User Section */}
           <div className="p-4 border-t border-border/50">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
+            {session?.user ? (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{session.user.name || session.user.email}</div>
+                  <div className="text-xs text-muted-foreground">Authenticated</div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium truncate">Settings</div>
+            ) : (
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-2">Sign in to save conversations</p>
+                <Button variant="outline" size="sm" className="w-full" onClick={() => window.location.href = '/auth/login'}>
+                  Sign In
+                </Button>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -361,14 +486,14 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
                             <Bot className="w-4 h-4 text-white" />
                           </div>
-                          <span className="text-sm font-medium text-muted-foreground">CHAT A.I + 🤖</span>
+                          <span className="text-sm font-medium text-muted-foreground">BlokLens AI</span>
                         </>
                       ) : (
                         <>
                           <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
                             <User className="w-4 h-4" />
                           </div>
-                          <span className="text-sm font-medium">You</span>
+                          <span className="text-sm font-medium">{session?.user?.name || 'You'}</span>
                         </>
                       )}
                     </div>
@@ -442,7 +567,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
                       <Bot className="w-4 h-4 text-white" />
                     </div>
-                    <span className="text-sm font-medium text-muted-foreground">CHAT A.I + 🤖</span>
+                    <span className="text-sm font-medium text-muted-foreground">BlokLens AI</span>
                   </div>
                   <div className="pl-10">
                     <div className="flex items-center gap-2">
@@ -451,7 +576,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                         <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
                         <div className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
-                      <span className="text-sm text-muted-foreground">Thinking...</span>
+                      <span className="text-sm text-muted-foreground">Analyzing market data...</span>
                     </div>
                   </div>
                 </motion.div>
@@ -468,14 +593,14 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                   {/* Title Section */}
                   <motion.div variants={itemVariants} className="text-center mb-8">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
-                      <Zap className="w-4 h-4 text-primary" />
+                      <Sparkles className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium text-primary">Quick Start</span>
                     </div>
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                      What would you like to explore?
+                      {coinId ? `Analyze ${coinSymbol?.toUpperCase()}` : 'What would you like to explore?'}
                     </h2>
                     <p className="text-muted-foreground">
-                      Select a topic or type your own question
+                      {coinId ? 'Get AI-powered insights for your trading decisions' : 'Select a topic or ask your own question'}
                     </p>
                   </motion.div>
 
@@ -485,9 +610,9 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                       <motion.button
                         key={index}
                         variants={itemVariants}
-                        whileHover={{ scale: 1.03, y: -4 }}
+                        whileHover={{ scale: 1.02, y: -2 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => handleSuggestedPrompt(suggestion.prompt)}
+                        onClick={() => handleSuggestedPrompt(coinId ? suggestion.prompt.replace(/Bitcoin|Ethereum|top 10 cryptocurrencies/gi, coinSymbol?.toUpperCase() || 'this coin') : suggestion.prompt)}
                         className="group relative text-left p-5 rounded-2xl bg-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/40 shadow-lg hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 overflow-hidden"
                       >
                         {/* Gradient overlay on hover */}
@@ -508,7 +633,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                               {suggestion.title}
                             </h3>
                             <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-                              {suggestion.prompt}
+                              {coinId ? suggestion.prompt.replace(/Bitcoin|Ethereum|top 10 cryptocurrencies/gi, coinSymbol?.toUpperCase() || 'this coin') : suggestion.prompt}
                             </p>
                           </div>
                         </div>
@@ -550,7 +675,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                     value={inputValue}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    placeholder="What is your need?"
+                    placeholder={coinId ? `Ask about ${coinSymbol?.toUpperCase()} trading...` : "Ask about crypto trading, technical analysis, or market insights..."}
                     rows={1}
                     className="flex-1 resize-none bg-transparent border-0 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-0 max-h-[120px]"
                     disabled={isLoading}
@@ -570,13 +695,9 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                 </div>
               </form>
               
-              <div className="flex items-center justify-center gap-4 mt-4 text-xs text-muted-foreground">
-                <span>Regenerate</span>
-                <span>•</span>
-                <span className="flex items-center gap-1">
-                  <Bot className="w-3 h-3" />
-                  Regenerate
-                </span>
+              <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+                <Bot className="w-3 h-3" />
+                <span>AI-powered insights • Not financial advice • Always DYOR</span>
               </div>
             </div>
           </div>
