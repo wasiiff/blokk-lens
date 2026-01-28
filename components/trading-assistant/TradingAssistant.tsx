@@ -26,6 +26,9 @@ import {
   Trash2,
   Clock,
   Bitcoin,
+  ArrowLeft,
+  Info,
+  ArrowUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -61,37 +64,37 @@ const SUGGESTED_PROMPTS: SuggestedPrompt[] = [
     icon: <Bitcoin className="w-5 h-5" />,
     title: "Bitcoin Analysis",
     prompt: "Analyze the current Bitcoin price trend and provide trading insights",
-    gradient: "from-orange-500 to-amber-500",
+    gradient: "",
   },
   {
     icon: <BarChart3 className="w-5 h-5" />,
     title: "Technical Indicators",
     prompt: "Explain RSI, MACD, and Moving Averages for Ethereum",
-    gradient: "from-blue-500 to-cyan-500",
+    gradient: "",
   },
   {
     icon: <Target className="w-5 h-5" />,
     title: "Entry & Exit Points",
     prompt: "What are good entry and exit points for the top 10 cryptocurrencies?",
-    gradient: "from-emerald-500 to-teal-500",
+    gradient: "",
   },
   {
     icon: <Shield className="w-5 h-5" />,
     title: "Risk Management",
     prompt: "How should I manage risk when trading volatile altcoins?",
-    gradient: "from-rose-500 to-red-500",
+    gradient: "",
   },
   {
     icon: <Brain className="w-5 h-5" />,
     title: "Portfolio Strategy",
     prompt: "Suggest a balanced crypto portfolio for moderate risk tolerance",
-    gradient: "from-indigo-500 to-violet-500",
+    gradient: "",
   },
   {
     icon: <TrendingUp className="w-5 h-5" />,
     title: "Market Trends",
     prompt: "What are the current market trends and which coins show strong momentum?",
-    gradient: "from-purple-500 to-pink-500",
+    gradient: "",
   },
 ];
 
@@ -129,6 +132,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -139,8 +143,8 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
         id: `welcome-${Date.now()}`,
         role: 'assistant',
         content: coinId 
-          ? `Hey! 👋 Ready to analyze **${coinSymbol?.toUpperCase()}** for you.\n\nI can provide technical analysis, price predictions, and trading strategies. What would you like to explore?`
-          : `Hey! 👋 I'm your **AI Trading Assistant** powered by BlokLens.\n\nI specialize in:\n- 📊 **Technical Analysis** - RSI, MACD, Moving Averages\n- 📈 **Price Predictions** - Based on historical patterns\n- 🎯 **Entry/Exit Points** - Strategic trading levels\n- ⚠️ **Risk Assessment** - Support/resistance and volatility\n- 💡 **Portfolio Advice** - Diversification strategies\n\nWhat would you like to know about crypto trading?`,
+          ? `Ready to analyze **${coinSymbol?.toUpperCase()}** for you.\n\nI can provide technical analysis, price predictions, and trading strategies. What would you like to explore?`
+          : `I'm your **AI Trading Assistant** powered by BlokLens.\n\nI specialize in:\n- **Technical Analysis** - RSI, MACD, Moving Averages\n- **Price Predictions** - Based on historical patterns\n- **Entry/Exit Points** - Strategic trading levels\n- **Risk Assessment** - Support/resistance and volatility\n- **Portfolio Advice** - Diversification strategies\n\nWhat would you like to know about crypto trading?`,
       }]);
     }
   }, [coinId, coinSymbol, messages.length]);
@@ -228,8 +232,8 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
       id: `welcome-${Date.now()}`,
       role: 'assistant',
       content: coinId 
-        ? `Hey! 👋 Ready to analyze **${coinSymbol?.toUpperCase()}** for you.\n\nI can provide technical analysis, price predictions, and trading strategies. What would you like to explore?`
-        : `Hey! 👋 I'm your **AI Trading Assistant** powered by BlokLens.\n\nI specialize in:\n- 📊 **Technical Analysis** - RSI, MACD, Moving Averages\n- 📈 **Price Predictions** - Based on historical patterns\n- 🎯 **Entry/Exit Points** - Strategic trading levels\n- ⚠️ **Risk Assessment** - Support/resistance and volatility\n- 💡 **Portfolio Advice** - Diversification strategies\n\nWhat would you like to know about crypto trading?`,
+        ? `Ready to analyze **${coinSymbol?.toUpperCase()}** for you.\n\nI can provide technical analysis, price predictions, and trading strategies. What would you like to explore?`
+        : `I'm your **AI Trading Assistant** powered by BlokLens.\n\nI specialize in:\n- **Technical Analysis** - RSI, MACD, Moving Averages\n- **Price Predictions** - Based on historical patterns\n- **Entry/Exit Points** - Strategic trading levels\n- **Risk Assessment** - Support/resistance and volatility\n- **Portfolio Advice** - Diversification strategies\n\nWhat would you like to know about crypto trading?`,
     }]);
     setInputValue('');
     setSidebarOpen(false);
@@ -354,6 +358,168 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
 
   return (
     <div className="fixed inset-0 flex bg-gradient-to-br from-background via-background to-muted/20">
+      {/* Welcome Modal */}
+      <AnimatePresence>
+        {showWelcomeModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100]"
+              onClick={() => setShowWelcomeModal(false)}
+            />
+            
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.3, ease: [0.25, 0.4, 0.25, 1] }}
+              className="fixed inset-0 z-[101] flex items-center justify-center p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                {/* Header */}
+                <div className="p-6 border-b border-border/50 shrink-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center p-2">
+                      <Logo size="sm" className="w-7 h-5" />
+                    </div>
+                    <h2 className="text-2xl font-bold">Welcome to BlokLens AI</h2>
+                  </div>
+                  <p className="text-muted-foreground">Your intelligent trading assistant</p>
+                </div>
+
+                {/* Content - Scrollable */}
+                <div className="p-6 space-y-6 overflow-y-auto flex-1"  data-lenis-prevent>
+                  {/* Current Features */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-semibold">Current Features</h3>
+                    </div>
+                    <div className="space-y-3 ml-10">
+                      <div className="flex items-start gap-3">
+                        <BarChart3 className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Technical Analysis</p>
+                          <p className="text-sm text-muted-foreground">RSI, MACD, Moving Averages and more</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <TrendingUp className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Price Predictions</p>
+                          <p className="text-sm text-muted-foreground">Based on historical patterns and market data</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Target className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Entry & Exit Points</p>
+                          <p className="text-sm text-muted-foreground">Strategic trading levels and timing</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Shield className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Risk Assessment</p>
+                          <p className="text-sm text-muted-foreground">Support/resistance and volatility analysis</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Brain className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Portfolio Advice</p>
+                          <p className="text-sm text-muted-foreground">Diversification strategies and recommendations</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Important Note */}
+                  <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-semibold text-amber-500 mb-1">Important Note</p>
+                        <p className="text-sm text-muted-foreground">
+                          Right now, I provide trading suggestions and strategies to help you make informed decisions. 
+                          I'm continuously learning and improving to offer even better insights!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Coming Soon */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                        <Zap className="w-4 h-4 text-purple-500" />
+                      </div>
+                      <h3 className="text-lg font-semibold">Coming Soon</h3>
+                    </div>
+                    <div className="space-y-3 ml-10">
+                      <div className="flex items-start gap-3">
+                        <Bitcoin className="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Coin-Specific AI Analysis</p>
+                          <p className="text-sm text-muted-foreground">Deep dive into individual cryptocurrencies with tailored insights</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <LineChart className="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Real-Time Trading Signals</p>
+                          <p className="text-sm text-muted-foreground">Get instant notifications for trading opportunities</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Bot className="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Advanced Trading Automation</p>
+                          <p className="text-sm text-muted-foreground">Execute trades based on AI recommendations</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <PieChart className="w-5 h-5 text-purple-500 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Enhanced Market Analytics</p>
+                          <p className="text-sm text-muted-foreground">More comprehensive data analysis and insights</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Disclaimer */}
+                  <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground mb-1">Disclaimer</p>
+                    <p>
+                      Always do your own research (DYOR) and never invest more than you can afford to lose. 
+                      This is not financial advice.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-6 border-t border-border/50 shrink-0">
+                  <Button
+                    onClick={() => setShowWelcomeModal(false)}
+                    className="w-full h-12 text-base font-semibold rounded-xl bg-primary hover:bg-primary/90"
+                  >
+                    Got it, let's start!
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
       <div className={cn(
         "w-64 border-r border-border/50 bg-card/30 backdrop-blur-sm flex flex-col transition-transform duration-300 lg:translate-x-0",
@@ -370,16 +536,28 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
             <X className="w-4 h-4" />
           </Button>
 
-          {/* Header */}
+          {/* Header with centered logo and title */}
           <div className="p-4 border-b border-border/50">
-            <div className="flex items-center justify-between mb-2">
-              <h1 className="text-lg font-bold flex items-center gap-2">
-                <Logo size="sm" className="w-8 h-6" />
-                BlokLens AI
-              </h1>
+            <div className="flex items-center justify-between mb-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-lg hover:bg-muted"
+                onClick={() => window.location.href = '/'}
+                title="Back to Home"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              
+              <div className="flex flex-col items-center gap-1 flex-1">
+                <Logo size="sm" className="w-10 h-8" />
+                <h1 className="text-xl font-bold tracking-tight">BlokLens</h1>
+                <h2 className="text-xl font-bold tracking-tight -mt-1">AI</h2>
+              </div>
+
               <ThemeToggle />
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Trading Assistant</p>
+            <p className="text-sm text-muted-foreground text-center">Trading Assistant</p>
           </div>
 
           {/* New Chat Button */}
@@ -508,15 +686,26 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Mobile menu button */}
-        <div className="lg:hidden p-4 border-b border-border/50">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
+        {/* Mobile header */}
+        <div className="lg:hidden p-4 border-b border-border/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => window.location.href = '/'}
+              title="Back to Home"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          </div>
+          <ThemeToggle />
         </div>
         
         {/* Messages Area - THIS IS THE SCROLLABLE PART */}
@@ -642,20 +831,6 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                   variants={containerVariants}
                   className="mt-8"
                 >
-                  {/* Title Section */}
-                  <motion.div variants={itemVariants} className="text-center mb-8">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium text-primary">Quick Start</span>
-                    </div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                      {coinId ? `Analyze ${coinSymbol?.toUpperCase()}` : 'What would you like to explore?'}
-                    </h2>
-                    <p className="text-muted-foreground">
-                      {coinId ? 'Get AI-powered insights for your trading decisions' : 'Select a topic or ask your own question'}
-                    </p>
-                  </motion.div>
-
                   {/* Prompt Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {SUGGESTED_PROMPTS.map((suggestion, index) => (
@@ -670,19 +845,10 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                             : suggestion.prompt;
                           handleSuggestedPrompt(prompt);
                         }}
-                        className="group relative text-left p-5 rounded-2xl bg-card/60 backdrop-blur-sm border border-border/50 hover:border-primary/40 shadow-lg hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 overflow-hidden"
+                        className="group relative text-left p-5 rounded-2xl bg-card/40 backdrop-blur-sm border border-border/50 hover:border-border hover:bg-card/60 transition-all duration-300"
                       >
-                        {/* Gradient overlay on hover */}
-                        <div className={cn(
-                          "absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 bg-gradient-to-br",
-                          suggestion.gradient
-                        )} />
-                        
                         <div className="relative flex items-start gap-4">
-                          <div className={cn(
-                            "shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-gradient-to-br",
-                            suggestion.gradient
-                          )}>
+                          <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-muted/50 text-muted-foreground group-hover:text-foreground transition-colors">
                             {suggestion.icon}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -697,24 +863,6 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                       </motion.button>
                     ))}
                   </div>
-
-                  {/* Feature Pills */}
-                  <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-3 mt-8">
-                    {[
-                      { icon: <LineChart className="w-4 h-4" />, label: "Technical Analysis" },
-                      { icon: <TrendingUp className="w-4 h-4" />, label: "Price Predictions" },
-                      { icon: <PieChart className="w-4 h-4" />, label: "Portfolio Advice" },
-                      { icon: <Shield className="w-4 h-4" />, label: "Risk Management" },
-                    ].map((feature, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 border border-border/50 text-sm text-muted-foreground"
-                      >
-                        {feature.icon}
-                        {feature.label}
-                      </div>
-                    ))}
-                  </motion.div>
                 </motion.div>
               )}
 
@@ -746,16 +894,11 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <ArrowUp className="w-4 h-4" />
                     )}
                   </Button>
                 </div>
               </form>
-              
-              <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
-                <Bot className="w-3 h-3" />
-                <span>AI-powered insights • Not financial advice • Always DYOR</span>
-              </div>
             </div>
           </div>
         </div>

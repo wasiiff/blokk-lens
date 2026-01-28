@@ -209,21 +209,21 @@ html.lenis body {
     background: transparent;
   }
 
-  /* Dark mode */
+  /* Dark mode - Blackish scrollbar */
   .dark * {
-    scrollbar-color: hsl(var(--primary) / 0.5) transparent;
+    scrollbar-color: hsl(0 0% 20%) transparent;
   }
 
   .dark *::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary) / 0.5);
+    background: hsl(0 0% 20%);
   }
 
   .dark *::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.7);
+    background: hsl(0 0% 30%);
   }
 
   .dark *::-webkit-scrollbar-thumb:active {
-    background: hsl(var(--primary) / 0.7);
+    background: hsl(0 0% 30%);
   }
 }
 
