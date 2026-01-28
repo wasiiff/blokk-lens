@@ -181,13 +181,6 @@ export async function POST(req: Request) {
     // Build enhanced system prompt with market data
     const enhancedPrompt = buildEnhancedPrompt(marketContext);
 
-    // Save chat history if user is authenticated (async, don't await)
-    if (session?.user && sessionId) {
-      saveChatHistory(session.user.id, sessionId, messages, coinId, marketContext).catch(err => {
-        console.error('Failed to save chat history:', err);
-      });
-    }
-
     const result = streamText({
       model: getAIModel(),
       system: enhancedPrompt,
@@ -195,7 +188,47 @@ export async function POST(req: Request) {
       temperature: AI_CONFIG.temperature,
     });
 
-    return result.toTextStreamResponse();
+    // Get the full response text
+    const stream = result.toTextStreamResponse();
+    
+    // Save chat history after streaming completes (if user is authenticated)
+    if (session?.user && sessionId) {
+      // Clone the stream so we can read it
+      const [stream1, stream2] = stream.body ? stream.body.tee() : [null, null];
+      
+      if (stream1 && stream2) {
+        // Read the full response in the background
+        (async () => {
+          try {
+            const reader = stream2.getReader();
+            const decoder = new TextDecoder();
+            let fullResponse = '';
+            
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              fullResponse += decoder.decode(value, { stream: true });
+            }
+            
+            // Save both user message and AI response
+            const allMessages = [
+              ...messages,
+              { role: 'assistant', content: fullResponse }
+            ];
+            
+            await saveChatHistory(session.user.id, sessionId, allMessages, coinId, marketContext);
+          } catch (err) {
+            console.error('Failed to save chat history:', err);
+          }
+        })();
+        
+        return new Response(stream1, {
+          headers: stream.headers,
+        });
+      }
+    }
+
+    return stream;
   } catch (error) {
     console.error('Trading assistant error:', error);
     return new Response(
@@ -225,6 +258,8 @@ async function saveChatHistory(
       ? firstUserMessage.content.slice(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
       : 'New Chat';
     
+    // Replace all messages instead of pushing to avoid duplicates
+    // Preserve message IDs if they exist
     await ChatHistory.findOneAndUpdate(
       { sessionId },
       {
@@ -232,20 +267,17 @@ async function saveChatHistory(
           userId,
           title,
           coinId: coinId || undefined,
-        },
-        $push: {
-          messages: {
-            $each: messages.slice(-1).map((msg: any) => ({
-              role: msg.role,
-              content: msg.content,
-              timestamp: new Date(),
-              metadata: coinId ? {
-                coinId,
-                coinSymbol: marketContext?.coin.symbol,
-                priceAtTime: marketContext?.coin.currentPrice,
-              } : undefined,
-            })),
-          },
+          messages: messages.map((msg: any) => ({
+            id: msg.id, // Preserve the original message ID
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(),
+            metadata: coinId ? {
+              coinId,
+              coinSymbol: marketContext?.coin.symbol,
+              priceAtTime: marketContext?.coin.currentPrice,
+            } : undefined,
+          })),
         },
       },
       { upsert: true, new: true }

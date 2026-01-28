@@ -134,7 +134,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
   useEffect(() => {
     if (messages.length === 0) {
       setMessages([{
-        id: 'welcome',
+        id: `welcome-${Date.now()}`,
         role: 'assistant',
         content: coinId 
           ? `Hey! 👋 Ready to analyze **${coinSymbol?.toUpperCase()}** for you.\n\nI can provide technical analysis, price predictions, and trading strategies. What would you like to explore?`
@@ -165,31 +165,40 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
     }
   };
 
-  const loadChatSession = async (sessionId: string) => {
+  const loadChatSession = async (sid: string) => {
     try {
-      const res = await fetch(`/api/chat-history?sessionId=${sessionId}`);
+      const res = await fetch(`/api/chat-history?sessionId=${sid}`);
       if (res.ok) {
         const data = await res.json();
-        setMessages(data.messages || []);
-        setSessionId(sessionId);
-        setSidebarOpen(false);
+        if (data && data.messages) {
+          // Map messages to ensure they have proper IDs
+          const loadedMessages = data.messages.map((msg: any, idx: number) => ({
+            id: msg.id || msg._id || `${msg.role}-${sid}-${idx}`,
+            role: msg.role,
+            content: msg.content,
+            feedback: msg.feedback,
+          }));
+          setMessages(loadedMessages);
+          setSessionId(sid);
+          setSidebarOpen(false);
+        }
       }
     } catch (error) {
       console.error('Failed to load chat session:', error);
     }
   };
 
-  const deleteChatSession = async (sessionId: string, e: React.MouseEvent) => {
+  const deleteChatSession = async (sid: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm('Delete this conversation?')) return;
     
     try {
-      const res = await fetch(`/api/chat-history?sessionId=${sessionId}`, {
+      const res = await fetch(`/api/chat-history?sessionId=${sid}`, {
         method: 'DELETE',
       });
       if (res.ok) {
-        setChatHistory(prev => prev.filter(chat => chat.sessionId !== sessionId));
-        if (sessionId === sessionId) {
+        setChatHistory(prev => prev.filter(chat => chat.sessionId !== sid));
+        if (sid === sessionId) {
           startNewChat();
         }
       }
@@ -202,7 +211,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
     const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setSessionId(newSessionId);
     setMessages([{
-      id: 'welcome',
+      id: `welcome-${Date.now()}`,
       role: 'assistant',
       content: coinId 
         ? `Hey! 👋 Ready to analyze **${coinSymbol?.toUpperCase()}** for you.\n\nI can provide technical analysis, price predictions, and trading strategies. What would you like to explore?`
@@ -330,7 +339,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
   const showSuggestions = useMemo(() => messages.length <= 1, [messages.length]);
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-background via-background to-muted/20 overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-background via-background to-muted/20 overflow-hidden">
       <div className="h-full flex">
         {/* Sidebar */}
         <div className={cn(
@@ -479,79 +488,82 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                     transition={{ duration: 0.2 }}
                     className="mb-8"
                   >
-                    {/* Message Header */}
-                    <div className="flex items-center gap-3 mb-3">
-                      {message.role === 'assistant' ? (
-                        <>
+                    {message.role === 'assistant' ? (
+                      // AI message - left aligned
+                      <>
+                        {/* Message Header */}
+                        <div className="flex items-center gap-3 mb-3">
                           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
                             <Bot className="w-4 h-4 text-white" />
                           </div>
                           <span className="text-sm font-medium text-muted-foreground">BlokLens AI</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center">
-                            <User className="w-4 h-4" />
-                          </div>
-                          <span className="text-sm font-medium">{session?.user?.name || 'You'}</span>
-                        </>
-                      )}
-                    </div>
-                    
-                    {/* Message Content */}
-                    <div className={cn(
-                      "group relative pl-10",
-                      message.role === 'user' ? 'max-w-full' : 'max-w-full'
-                    )}>
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        {message.role === 'assistant' ? (
-                          <ChatMarkdown>{message.content}</ChatMarkdown>
-                        ) : (
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">{message.content}</p>
-                        )}
-                      </div>
-                      
-                      {/* Message Actions */}
-                      {message.role === 'assistant' && message.id !== 'welcome' && (
-                        <div className="flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-md hover:bg-muted"
-                            onClick={() => handleCopy(message.content, index)}
-                          >
-                            {copiedIndex === index ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-500" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5 text-muted-foreground" />
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn("h-7 w-7 rounded-md hover:bg-muted", message.feedback === 'up' && "text-emerald-500")}
-                            onClick={() => handleFeedback(message.id, 'up')}
-                          >
-                            <ThumbsUp className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn("h-7 w-7 rounded-md hover:bg-muted", message.feedback === 'down' && "text-rose-500")}
-                            onClick={() => handleFeedback(message.id, 'down')}
-                          >
-                            <ThumbsDown className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-md hover:bg-muted"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
-                          </Button>
                         </div>
-                      )}
-                    </div>
+                        
+                        {/* Message Content */}
+                        <div className="group relative pl-10">
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <ChatMarkdown>{message.content}</ChatMarkdown>
+                          </div>
+                          
+                          {/* Message Actions */}
+                          {!message.id.startsWith('welcome') && (
+                            <div className="flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-md hover:bg-muted"
+                                onClick={() => handleCopy(message.content, index)}
+                              >
+                                {copiedIndex === index ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={cn("h-7 w-7 rounded-md hover:bg-muted", message.feedback === 'up' && "text-emerald-500")}
+                                onClick={() => handleFeedback(message.id, 'up')}
+                              >
+                                <ThumbsUp className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={cn("h-7 w-7 rounded-md hover:bg-muted", message.feedback === 'down' && "text-rose-500")}
+                                onClick={() => handleFeedback(message.id, 'down')}
+                              >
+                                <ThumbsDown className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-md hover:bg-muted"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      // User message - right aligned
+                      <div className="flex flex-col items-end">
+                        {/* Message Header */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-sm font-medium">{session?.user?.name || 'You'}</span>
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                            <User className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
+                        
+                        {/* Message Content */}
+                        <div className="bg-primary/10 rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%]">
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground">{message.content}</p>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 ))}
               </AnimatePresence>

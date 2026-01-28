@@ -31,7 +31,7 @@ const ChatMessageSchema = new Schema<IChatMessage>({
     priceAtTime: Number,
     analysisType: String,
   },
-});
+}, { _id: true }); // Ensure each message gets an _id
 
 const ChatHistorySchema = new Schema<IChatHistory>(
   {
