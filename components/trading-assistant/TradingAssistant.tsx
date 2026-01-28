@@ -538,7 +538,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
 
           {/* Header with centered logo and title */}
           <div className="p-4 border-b border-border/50">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <Button
                 variant="ghost"
                 size="icon"
@@ -549,15 +549,14 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               
-              <div className="flex flex-col items-center gap-1 flex-1">
-                <Logo size="sm" className="w-10 h-8" />
-                <h1 className="text-xl font-bold tracking-tight">BlokLens</h1>
-                <h2 className="text-xl font-bold tracking-tight -mt-1">AI</h2>
+              <div className="flex items-center gap-1.5 absolute left-1/2 -translate-x-1/2">
+                <Logo size="sm" className="w-6 h-5" />
+                <h1 className="text-base font-bold tracking-tight">BLOKK LENS AI</h1>
               </div>
 
               <ThemeToggle />
             </div>
-            <p className="text-sm text-muted-foreground text-center">Trading Assistant</p>
+            <p className="text-sm text-muted-foreground text-center mt-2">Trading Assistant</p>
           </div>
 
           {/* New Chat Button */}
