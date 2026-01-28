@@ -368,7 +368,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
           </div>
 
           {/* Conversation History */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4">
+          <div className="flex-1 overflow-y-auto px-4 pb-4" data-lenis-prevent>
             <div className="text-xs font-medium text-muted-foreground mb-3 flex items-center gap-2">
               <Clock className="w-3 h-3" />
               Recent Conversations
@@ -463,7 +463,7 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
         </div>
         
         {/* Messages Area - THIS IS THE SCROLLABLE PART */}
-        <div className="flex-1 overflow-y-scroll relative">
+        <div className="flex-1 overflow-y-scroll relative" data-lenis-prevent>
           {/* Subtle grid pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_110%)] pointer-events-none" />
           
