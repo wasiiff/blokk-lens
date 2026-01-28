@@ -31,6 +31,8 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChatMarkdown from './ChatMarkdown';
 import { useSession } from 'next-auth/react';
+import { Logo } from '@/components/ui/logo';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface SuggestedPrompt {
   icon: React.ReactNode;
@@ -370,10 +372,13 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
 
           {/* Header */}
           <div className="p-4 border-b border-border/50">
-            <h1 className="text-lg font-bold flex items-center gap-2">
-              <Bot className="w-5 h-5 text-primary" />
-              BlokLens AI
-            </h1>
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-lg font-bold flex items-center gap-2">
+                <Logo size="sm" className="w-8 h-6" />
+                BlokLens AI
+              </h1>
+              <ThemeToggle />
+            </div>
             <p className="text-xs text-muted-foreground mt-1">Trading Assistant</p>
           </div>
 
@@ -535,8 +540,8 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                       <>
                         {/* Message Header */}
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-                            <Bot className="w-4 h-4 text-white" />
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center p-1">
+                            <Logo size="sm" className="w-5 h-4" />
                           </div>
                           <span className="text-sm font-medium text-muted-foreground">BlokLens AI</span>
                         </div>
@@ -611,8 +616,8 @@ function TradingAssistant({ coinId, coinSymbol }: TradingAssistantProps) {
                   className="mb-8"
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-                      <Bot className="w-4 h-4 text-white" />
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center p-1">
+                      <Logo size="sm" className="w-5 h-4" />
                     </div>
                     <span className="text-sm font-medium text-muted-foreground">BlokLens AI</span>
                   </div>
