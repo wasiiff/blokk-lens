@@ -46,11 +46,11 @@ export default function Navbar() {
     },
     {
       name: "AI Assistant",
-      href: "#",
+      href: "/trading-assistant",
       icon: Bot,
       description: "AI-powered trading insights",
-      available: false,
-      comingSoon: true
+      available: true,
+      comingSoon: false
     },
     ...(mounted && session ? [{
       name: "Watchlist",

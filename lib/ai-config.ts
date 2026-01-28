@@ -1,24 +1,74 @@
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 
 /**
  * AI Configuration for Trading Assistant
  * 
- * This file centralizes AI model configuration for easy switching
- * between different models and providers.
+ * VERCEL AI GATEWAY SETUP (Recommended):
+ * ----------------------------------------
+ * Vercel AI Gateway provides unified access to multiple AI providers through a single endpoint.
+ * 
+ * Benefits:
+ * - Access 100+ models from multiple providers (OpenAI, Anthropic, Google, etc.)
+ * - Automatic fallbacks if one provider fails
+ * - Built-in rate limiting and caching
+ * - Usage tracking and cost monitoring
+ * - No markup on tokens (same cost as direct provider)
+ * 
+ * Setup Steps:
+ * 1. Go to Vercel Dashboard → Your Project → AI Gateway
+ * 2. Click "API Keys" → "Add Key" → Copy the key (starts with vck_)
+ * 3. Add to .env: AI_GATEWAY_API_KEY=vck_your_key_here
+ * 4. (Optional) Add provider keys in Vercel Dashboard for BYOK (Bring Your Own Key)
+ * 
+ * The gateway automatically handles authentication and routing!
  */
 
+// Create provider based on configuration
+const getProvider = () => {
+  // Check for Vercel AI Gateway first (recommended)
+  const AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY;
+  
+  if (AI_GATEWAY_API_KEY) {
+    // Use Vercel AI Gateway - unified access to all providers
+    console.log('✅ Using Vercel AI Gateway');
+    return createOpenAICompatible({
+      name: 'vercel-gateway',
+      apiKey: AI_GATEWAY_API_KEY,
+      baseURL: 'https://ai-gateway.vercel.sh/v1',
+    });
+  }
+  
+  // Fallback to direct OpenAI API
+  const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+  
+  if (OPENAI_API_KEY) {
+    console.log('✅ Using Direct OpenAI API');
+    return createOpenAI({
+      apiKey: OPENAI_API_KEY,
+    });
+  }
+  
+  console.error('❌ No API key found!');
+  console.error('   Option 1: Add AI_GATEWAY_API_KEY to .env (get from Vercel Dashboard)');
+  console.error('   Option 2: Add OPENAI_API_KEY to .env (get from https://platform.openai.com/api-keys)');
+  throw new Error('Missing API key: Set AI_GATEWAY_API_KEY or OPENAI_API_KEY in .env');
+};
+
+export const aiProvider = getProvider();
+
 export const AI_MODELS = {
-  // GPT-4 Turbo - Best quality, higher cost
-  GPT4_TURBO: 'gpt-4-turbo',
+  // OpenAI Models (works with both direct API and Gateway)
+  GPT4_TURBO: 'openai/gpt-4-turbo',
+  GPT4: 'openai/gpt-4',
+  GPT35_TURBO: 'openai/gpt-3.5-turbo',
+  GPT4O: 'openai/gpt-4o',
   
-  // GPT-4 - Stable, good quality
-  GPT4: 'gpt-4',
-  
-  // GPT-3.5 Turbo - Fast, lower cost
-  GPT35_TURBO: 'gpt-3.5-turbo',
-  
-  // GPT-4o - Optimized for speed and cost
-  GPT4O: 'gpt-4o',
+  // Gateway-only models (require AI Gateway)
+  CLAUDE_SONNET: 'anthropic/claude-sonnet-4.5',
+  CLAUDE_OPUS: 'anthropic/claude-opus-4',
+  GEMINI_FLASH: 'google/gemini-2.0-flash',
+  GEMINI_PRO: 'google/gemini-2.0-pro',
 } as const;
 
 export const AI_CONFIG = {
@@ -44,10 +94,16 @@ export const AI_CONFIG = {
 
 /**
  * Get configured AI model instance
+ * 
+ * With AI Gateway, you can use models from multiple providers:
+ * - OpenAI: openai/gpt-4-turbo, openai/gpt-4o
+ * - Anthropic: anthropic/claude-sonnet-4.5
+ * - Google: google/gemini-2.0-flash
+ * - And many more!
  */
 export function getAIModel(modelName?: string) {
   const model = modelName || AI_CONFIG.defaultModel;
-  return openai(model);
+  return aiProvider(model);
 }
 
 /**

@@ -175,6 +175,56 @@ html.lenis body {
     content-visibility: auto;
     contain: layout style paint;
   }
+
+  /* Custom Scrollbar Styles - Minimal & Always Visible */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.4) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.4);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.6);
+  }
+
+  *::-webkit-scrollbar-thumb:active {
+    background: hsl(var(--primary) / 0.6);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Dark mode - Blackish scrollbar */
+  .dark * {
+    scrollbar-color: hsl(0 0% 20%) transparent;
+  }
+
+  .dark *::-webkit-scrollbar-thumb {
+    background: hsl(0 0% 20%);
+  }
+
+  .dark *::-webkit-scrollbar-thumb:hover {
+    background: hsl(0 0% 30%);
+  }
+
+  .dark *::-webkit-scrollbar-thumb:active {
+    background: hsl(0 0% 30%);
+  }
 }
 
 /* Solid Cards with Shadow */
@@ -324,6 +374,21 @@ html.lenis body {
   to {
     box-shadow: 0 0 30px rgba(139, 92, 246, 0.4), 0 0 60px rgba(139, 92, 246, 0.2);
   }
+}
+
+/* Animated gradient border */
+@keyframes gradient-x {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 3s ease infinite;
 }
 
 /* Animated dashed border for top gainer card */

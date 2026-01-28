@@ -41,6 +41,7 @@ export interface CoinDetails {
     market_data?: {
         current_price?: Record<string, number>;
         market_cap?: Record<string, number>;
+        total_volume?: Record<string, number>;
         price_change_percentage_24h?: number;
         circulating_supply?: number;
         total_supply?: number | null;

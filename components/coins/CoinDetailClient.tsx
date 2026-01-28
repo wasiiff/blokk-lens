@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { fetchCoinDetails, addFavorite, removeFavorite, fetchFavorites } from "@/services/queries"
-import { TrendingUp, TrendingDown, ArrowLeft, ExternalLink, Star } from "lucide-react"
+import { TrendingUp, TrendingDown, ArrowLeft, ExternalLink, Star, Bot } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
@@ -11,7 +11,6 @@ import { CoinDetailSkeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from "react"
 import { useRouter } from "next/navigation"
-import CoinAnalysisChat from "@/components/trading-assistant/CoinAnalysisChat"
 
 // Lazy load heavy components
 const PriceChart = lazy(() => import("@/components/trading-assistant/PriceChart"))
@@ -195,11 +194,19 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                       Rank #{coin.market_data.market_cap_rank}
                     </div>
                   )}
-                  <CoinAnalysisChat 
-                    coinId={coinId} 
-                    coinSymbol={coin.symbol} 
-                    coinName={coin.name}
-                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    className="gap-2 border-primary/20 bg-muted/30 cursor-not-allowed opacity-60"
+                  >
+                    <Bot className="w-4 h-4" />
+                    <span className="hidden sm:inline">Ask AI</span>
+                    <span className="sm:hidden">AI</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                      Soon
+                    </span>
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"

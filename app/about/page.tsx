@@ -1,6 +1,6 @@
 "use client"
 
-import { Github, Rocket, Bot, Coins, TrendingUp, Shield, Zap, ArrowUpRight, Sparkles, Target, Users, Globe } from "lucide-react"
+import { Github, Rocket, Bot, Coins, TrendingUp, Shield, Zap, ArrowUpRight, Sparkles, Target, Users, Globe, Wallet, Brain } from "lucide-react"
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
 import { Button } from "@/components/ui/button"
@@ -11,10 +11,12 @@ import { BackgroundGrid, LeftDecorativePattern, RightDecorativePattern, Vertical
 export default function AboutPage() {
   const features = [
     { name: "Real-Time Market Data", description: "Track live cryptocurrency prices, market trends, and detailed analytics powered by CoinGecko API.", icon: TrendingUp, status: "Live" },
-    { name: "AI Trading Assistant", description: "Get intelligent trading suggestions powered by AI. Our bot analyzes market trends and provides personalized recommendations.", icon: Bot, status: "Coming Soon" },
-    { name: "Launch Your Coin", description: "Create and launch your own cryptocurrency with our easy-to-use platform. No technical knowledge required.", icon: Rocket, status: "Coming Soon" },
+    { name: "Personal Portfolio", description: "Connect your wallet and track your crypto holdings across multiple chains with real-time balance updates and portfolio analytics.", icon: Wallet, status: "Live" },
+    { name: "AI Trading Assistant", description: "Get intelligent trading suggestions powered by AI. Our bot analyzes market trends and provides personalized recommendations.", icon: Bot, status: "Live" },
     { name: "Smart Watchlist", description: "Save and monitor your favorite cryptocurrencies with real-time alerts and personalized insights.", icon: Sparkles, status: "Live" },
     { name: "Lightning Fast", description: "Built with Next.js 14 for optimal performance, instant page loads, and seamless user experience.", icon: Zap, status: "Live" },
+    { name: "Coin-Specific AI Analysis", description: "Deep dive into individual cryptocurrencies with AI-powered technical analysis, price predictions, and trading signals tailored to each coin.", icon: Target, status: "Coming Soon" },
+    { name: "Launch Your Coin", description: "Create and launch your own cryptocurrency with our easy-to-use platform. No technical knowledge required.", icon: Rocket, status: "Coming Soon" },
   ]
 
   return (
@@ -97,7 +99,7 @@ export default function AboutPage() {
                   <p className="text-lg text-muted-foreground">Built with the best tools and technologies</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <a href="https://www.coingecko.com/" target="_blank" rel="noopener noreferrer" className="block p-6 border border-border/50 rounded-xl bg-muted/20 hover:border-primary/50 transition-all group">
                     <div className="flex items-center gap-3 mb-3">
                       <Coins className="w-6 h-6 text-primary" />
@@ -113,6 +115,14 @@ export default function AboutPage() {
                       <ArrowUpRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100" />
                     </div>
                     <p className="text-sm text-muted-foreground">Beautiful, accessible UI components that power our modern interface</p>
+                  </a>
+                  <a href="https://vercel.com/docs/ai-gateway" target="_blank" rel="noopener noreferrer" className="block p-6 border border-border/50 rounded-xl bg-muted/20 hover:border-primary/50 transition-all group">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Brain className="w-6 h-6 text-primary" />
+                      <h3 className="font-semibold text-lg">Vercel AI Gateway</h3>
+                      <ArrowUpRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">Advanced AI infrastructure powering intelligent trading insights and analysis</p>
                   </a>
                 </div>
               </section>
