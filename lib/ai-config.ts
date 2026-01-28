@@ -1,5 +1,5 @@
 import { createOpenAI } from '@ai-sdk/openai';
-import { createGateway } from 'ai';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 
 /**
  * AI Configuration for Trading Assistant
@@ -24,51 +24,47 @@ import { createGateway } from 'ai';
  * The gateway automatically handles authentication and routing!
  */
 
-// Get AI Gateway API key from environment
-const AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY;
-
-// Check if we should use AI Gateway
-const USE_AI_GATEWAY = !!AI_GATEWAY_API_KEY;
-
 // Create provider based on configuration
 const getProvider = () => {
-  // Check for OpenAI API key first (direct access)
+  // Check for Vercel AI Gateway first (recommended)
+  const AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY;
+  
+  if (AI_GATEWAY_API_KEY) {
+    // Use Vercel AI Gateway - unified access to all providers
+    console.log('✅ Using Vercel AI Gateway');
+    return createOpenAICompatible({
+      name: 'vercel-gateway',
+      apiKey: AI_GATEWAY_API_KEY,
+      baseURL: 'https://ai-gateway.vercel.sh/v1',
+    });
+  }
+  
+  // Fallback to direct OpenAI API
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
   
   if (OPENAI_API_KEY) {
-    // Use direct OpenAI API
     console.log('✅ Using Direct OpenAI API');
     return createOpenAI({
       apiKey: OPENAI_API_KEY,
     });
   }
   
-  if (USE_AI_GATEWAY) {
-    // Use Vercel AI Gateway - unified access to all providers
-    console.log('✅ Using Vercel AI Gateway');
-    console.log('⚠️  Note: Vercel AI Gateway requires a credit card on file');
-    console.log('   Visit: https://vercel.com/account/billing to add one');
-    return createGateway({
-      apiKey: AI_GATEWAY_API_KEY,
-    });
-  }
-  
   console.error('❌ No API key found!');
-  console.error('   Option 1: Add OPENAI_API_KEY to .env (get from https://platform.openai.com/api-keys)');
-  console.error('   Option 2: Add credit card to Vercel and use AI_GATEWAY_API_KEY');
-  throw new Error('Missing API key: Set OPENAI_API_KEY or AI_GATEWAY_API_KEY in .env');
+  console.error('   Option 1: Add AI_GATEWAY_API_KEY to .env (get from Vercel Dashboard)');
+  console.error('   Option 2: Add OPENAI_API_KEY to .env (get from https://platform.openai.com/api-keys)');
+  throw new Error('Missing API key: Set AI_GATEWAY_API_KEY or OPENAI_API_KEY in .env');
 };
 
 export const aiProvider = getProvider();
 
 export const AI_MODELS = {
   // OpenAI Models (works with both direct API and Gateway)
-  GPT4_TURBO: 'gpt-4-turbo',
-  GPT4: 'gpt-4',
-  GPT35_TURBO: 'gpt-3.5-turbo',
-  GPT4O: 'gpt-4o',
+  GPT4_TURBO: 'openai/gpt-4-turbo',
+  GPT4: 'openai/gpt-4',
+  GPT35_TURBO: 'openai/gpt-3.5-turbo',
+  GPT4O: 'openai/gpt-4o',
   
-  // Gateway-only models (require AI Gateway with credit card)
+  // Gateway-only models (require AI Gateway)
   CLAUDE_SONNET: 'anthropic/claude-sonnet-4.5',
   CLAUDE_OPUS: 'anthropic/claude-opus-4',
   GEMINI_FLASH: 'google/gemini-2.0-flash',
@@ -107,14 +103,6 @@ export const AI_CONFIG = {
  */
 export function getAIModel(modelName?: string) {
   const model = modelName || AI_CONFIG.defaultModel;
-  
-  if (USE_AI_GATEWAY) {
-    // When using gateway, return the model string directly
-    // The gateway provider handles model creation
-    return aiProvider(model);
-  }
-  
-  // For direct OpenAI, use the provider
   return aiProvider(model);
 }
 
