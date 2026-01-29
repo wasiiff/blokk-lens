@@ -23,8 +23,6 @@ export default function Footer() {
     company: [
       { label: "About Developer", href: "/about" },
       { label: "Contact", href: "mailto:wasifbinnasir@gmail.com" },
-      { label: "Privacy Policy", href: "#" },
-      { label: "Terms of Service", href: "#" },
     ],
   }
 
