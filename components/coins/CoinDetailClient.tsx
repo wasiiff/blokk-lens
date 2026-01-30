@@ -11,6 +11,9 @@ import { CoinDetailSkeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from "react"
 import { useRouter } from "next/navigation"
+import EnhancedCoinAI from "@/components/coins/EnhancedCoinAI"
+import AlertsManager from "@/components/alerts/AlertsManager"
+import BacktestRunner from "@/components/backtest/BacktestRunner"
 
 // Lazy load heavy components
 const PriceChart = lazy(() => import("@/components/trading-assistant/PriceChart"))
@@ -157,10 +160,19 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
   if (!coin) return null
 
   return (
-    <div className="relative w-full py-4 sm:py-6 md:py-8">
-      <div className="absolute -right-20 top-0 pointer-events-none opacity-10 hidden lg:block">
-        <CircuitDecoration className="w-96 h-96" />
-      </div>
+    <>
+      {/* Enhanced Coin-specific AI Chat */}
+      <EnhancedCoinAI 
+        coinId={coinId} 
+        coinSymbol={coin.symbol} 
+        coinName={coin.name}
+        currentPrice={currentPrice}
+      />
+      
+      <div className="relative w-full py-4 sm:py-6 md:py-8">
+        <div className="absolute -right-20 top-0 pointer-events-none opacity-10 hidden lg:block">
+          <CircuitDecoration className="w-96 h-96" />
+        </div>
 
       <Link href="/">
         <Button variant="ghost" className="mb-4 sm:mb-6 flex items-center gap-2">
@@ -194,19 +206,6 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                       Rank #{coin.market_data.market_cap_rank}
                     </div>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled
-                    className="gap-2 border-primary/20 bg-muted/30 cursor-not-allowed opacity-60"
-                  >
-                    <Bot className="w-4 h-4" />
-                    <span className="hidden sm:inline">Ask AI</span>
-                    <span className="sm:hidden">AI</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
-                      Soon
-                    </span>
-                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -300,6 +299,15 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
         </div>
 
         <div className="space-y-4 sm:space-y-6">
+          <AlertsManager
+            coinId={coinId}
+            coinSymbol={coin.symbol}
+            coinName={coin.name}
+            currentPrice={currentPrice}
+          />
+
+          <BacktestRunner coinId={coinId} coinSymbol={coin.symbol} />
+
           <Card className="glass-card-light border border-border">
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="card-text text-lg sm:text-xl">Links</CardTitle>
@@ -358,6 +366,7 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
         </div>
       </div>
     </div>
+    </>
   )
 })
 
