@@ -397,3 +397,25 @@ html.lenis body {
     stroke-dashoffset: -100;
   }
 }
+
+@layer utilities {
+  /* Text stroke effect */
+  .text-stroke {
+    -webkit-text-fill-color: transparent;
+    -webkit-text-stroke-width: 2px;
+    -webkit-text-stroke-color: hsl(var(--primary));
+    paint-order: stroke fill;
+  }
+
+  @media (min-width: 640px) {
+    .text-stroke {
+      -webkit-text-stroke-width: 2.5px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .text-stroke {
+      -webkit-text-stroke-width: 3px;
+    }
+  }
+}

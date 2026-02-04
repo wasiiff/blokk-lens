@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import { cacheManager } from "@/lib/cache-manager"
 import { usePageVisibility } from "@/lib/hooks/usePageVisibility"
+import Lenis from "lenis"
 
 interface Coin {
   id: string
@@ -39,6 +40,8 @@ export default function VirtualizedCoinSelector({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const lenisRef = useRef<Lenis | null>(null)
   const isPageVisible = usePageVisibility()
 
   const fetchCoins = async () => {
@@ -52,7 +55,7 @@ export default function VirtualizedCoinSelector({
     setError(null)
     
     try {
-      // Use cache manager with 3-minute cache
+      // Use cache manager with 5-minute cache
       const data = await cacheManager.get(
         'market-coins-100',
         async () => {
@@ -63,8 +66,8 @@ export default function VirtualizedCoinSelector({
           return response.json()
         },
         {
-          ttl: 180000, // 3 minutes
-          staleTime: 60000, // 1 minute
+          ttl: 300000, // 5 minutes
+          staleTime: 120000, // 2 minutes
         }
       )
       
@@ -84,6 +87,36 @@ export default function VirtualizedCoinSelector({
       fetchCoins()
     }
   }, [isOpen, coins.length, isPageVisible])
+
+  // Initialize Lenis for smooth scrolling in dropdown
+  useEffect(() => {
+    if (isOpen && scrollContainerRef.current) {
+      lenisRef.current = new Lenis({
+        wrapper: scrollContainerRef.current,
+        content: scrollContainerRef.current,
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        orientation: 'vertical',
+        gestureOrientation: 'vertical',
+        smoothWheel: true,
+        wheelMultiplier: 1,
+        touchMultiplier: 2,
+        infinite: false,
+      })
+
+      function raf(time: number) {
+        lenisRef.current?.raf(time)
+        requestAnimationFrame(raf)
+      }
+
+      requestAnimationFrame(raf)
+
+      return () => {
+        lenisRef.current?.destroy()
+        lenisRef.current = null
+      }
+    }
+  }, [isOpen])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -152,9 +185,9 @@ export default function VirtualizedCoinSelector({
 
           {/* Dropdown */}
           {isOpen && (
-            <div className="absolute top-full mt-2 w-80 max-h-96 rounded-xl bg-background/95 backdrop-blur-xl border border-border shadow-2xl overflow-hidden z-50">
+            <div className="absolute top-full mt-2 w-80 max-h-96 rounded-xl bg-background/95 backdrop-blur-xl border border-border shadow-2xl overflow-hidden z-50 flex flex-col">
               {/* Search */}
-              <div className="p-3 border-b border-border/50">
+              <div className="p-3 border-b border-border/50 flex-shrink-0">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -168,7 +201,11 @@ export default function VirtualizedCoinSelector({
               </div>
 
               {/* Coins List */}
-              <div className="overflow-y-auto max-h-80">
+              <div 
+                ref={scrollContainerRef}
+                className="overflow-y-auto flex-1" 
+                style={{ maxHeight: '320px' }}
+              >
                 {isLoading ? (
                   <div className="p-8 text-center">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
