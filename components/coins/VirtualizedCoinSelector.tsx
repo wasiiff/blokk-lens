@@ -185,17 +185,17 @@ export default function VirtualizedCoinSelector({
 
           {/* Dropdown */}
           {isOpen && (
-            <div className="absolute top-full mt-2 w-80 max-h-96 rounded-xl bg-background/95 backdrop-blur-xl border border-border shadow-2xl overflow-hidden z-50 flex flex-col">
+            <div className="absolute top-full mt-2 w-72 max-h-80 rounded-xl bg-background/95 backdrop-blur-xl border border-border shadow-2xl overflow-hidden z-50 flex flex-col">
               {/* Search */}
-              <div className="p-3 border-b border-border/50 flex-shrink-0">
+              <div className="p-2.5 border-b border-border/50 flex-shrink-0">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                   <Input
                     type="text"
                     placeholder="Search cryptocurrency..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-10 bg-muted/50 border-border/50"
+                    className="pl-9 h-9 text-sm bg-muted/50 border-border/50"
                   />
                 </div>
               </div>
@@ -204,7 +204,7 @@ export default function VirtualizedCoinSelector({
               <div 
                 ref={scrollContainerRef}
                 className="overflow-y-auto flex-1" 
-                style={{ maxHeight: '320px' }}
+                style={{ maxHeight: '280px' }}
               >
                 {isLoading ? (
                   <div className="p-8 text-center">
