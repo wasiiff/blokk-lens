@@ -11,9 +11,16 @@ import { CoinDetailSkeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from "react"
 import { useRouter } from "next/navigation"
-import EnhancedCoinAI from "@/components/coins/EnhancedCoinAI"
+
 import AlertsManager from "@/components/alerts/AlertsManager"
 import BacktestRunner from "@/components/backtest/BacktestRunner"
+import dynamic from "next/dynamic"
+
+// Dynamic import for DraggableTradingAssistant to avoid SSR issues and circular dependencies
+const DraggableTradingAssistant = dynamic(
+  () => import("@/components/coins/DraggableTradingAssistant"),
+  { ssr: false }
+)
 
 // Lazy load heavy components
 const PriceChart = lazy(() => import("@/components/trading-assistant/PriceChart"))
@@ -162,7 +169,8 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
   return (
     <>
       {/* Enhanced Coin-specific AI Chat */}
-      <EnhancedCoinAI 
+      {/* Floating Draggable AI Assistant with New Interface */}
+      <DraggableTradingAssistant 
         coinId={coinId} 
         coinSymbol={coin.symbol} 
         coinName={coin.name}

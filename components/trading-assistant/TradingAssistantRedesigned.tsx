@@ -111,9 +111,16 @@ const itemVariants = {
 interface TradingAssistantRedesignedProps {
   coinId?: string;
   coinSymbol?: string;
+  isEmbedded?: boolean;
+  forceMobile?: boolean;
 }
 
-function TradingAssistantRedesigned({ coinId, coinSymbol }: TradingAssistantRedesignedProps) {
+function TradingAssistantRedesigned({ 
+  coinId, 
+  coinSymbol, 
+  isEmbedded = false,
+  forceMobile = false 
+}: TradingAssistantRedesignedProps) {
   const { data: session } = useSession();
   const [sessionId, setSessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -312,8 +319,11 @@ function TradingAssistantRedesigned({ coinId, coinSymbol }: TradingAssistantRede
   const showWelcome = messages.length === 0;
 
   return (
-    <div className="fixed inset-0 flex bg-background overflow-hidden">
-      {/* Mobile Backdrop */}
+    <div className={cn(
+      "flex bg-background overflow-hidden relative",
+      isEmbedded ? "w-full h-full" : "fixed inset-0"
+    )}>
+      {/* Mobile Backdrop - show if mobile or forced mobile */}
       <AnimatePresence>
         {sidebarOpen && (
           <motion.div
@@ -321,7 +331,10 @@ function TradingAssistantRedesigned({ coinId, coinSymbol }: TradingAssistantRede
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+            className={cn(
+              "absolute inset-0 bg-black/60 backdrop-blur-sm z-40",
+              !forceMobile && "lg:hidden"
+            )}
           />
         )}
       </AnimatePresence>
@@ -334,9 +347,12 @@ function TradingAssistantRedesigned({ coinId, coinSymbol }: TradingAssistantRede
             animate={{ width: 250, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed lg:relative inset-y-0 left-0 z-50 h-full bg-card border-r border-dashed border-border flex flex-col overflow-hidden shadow-2xl lg:shadow-none"
+            className={cn(
+              "absolute inset-y-0 left-0 z-50 h-full bg-card border-r border-dashed border-border flex flex-col overflow-hidden shadow-2xl",
+              !forceMobile && "lg:relative lg:shadow-none"
+            )}
           >
-            <div className="w-64 flex flex-col h-full">
+             <div className="w-64 flex flex-col h-full">
               {/* Header with logo and close button */}
         <div className="h-14 px-4 flex items-center justify-between border-b border-dashed border-border">
           <div className="flex items-center gap-2">
@@ -351,7 +367,7 @@ function TradingAssistantRedesigned({ coinId, coinSymbol }: TradingAssistantRede
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className={cn(!forceMobile && "lg:hidden")}
             onClick={() => setSidebarOpen(false)}
           >
             <X className="w-4 h-4" />
@@ -446,8 +462,8 @@ function TradingAssistantRedesigned({ coinId, coinSymbol }: TradingAssistantRede
         )}
       </AnimatePresence>
 
-      {/* Collapsed Sidebar - Icon Only - Desktop Only */}
-      {!sidebarOpen && (
+      {/* Collapsed Sidebar - Icon Only - Desktop Only - Hide if forceMobile */}
+      {!sidebarOpen && !forceMobile && (
         <div className="hidden lg:flex w-16 bg-card border-r border-dashed border-border flex-col items-center">
           {/* Logo - matches expanded state height */}
           <div className="h-14 flex items-center justify-center border-b border-dashed border-border w-full">
@@ -496,9 +512,9 @@ function TradingAssistantRedesigned({ coinId, coinSymbol }: TradingAssistantRede
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-muted-foreground hover:text-foreground"
+              className={cn("text-muted-foreground hover:text-foreground", !forceMobile && "lg:hidden")}
             >
-              {sidebarOpen ? <PanelLeftClose className="w-5 h-5" /> : <PanelLeft className="w-5 h-5" />}
+              {sidebarOpen ? <PanelLeftClose className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
             <span className="text-sm font-semibold">BlokkLens AI</span>
           </div>
