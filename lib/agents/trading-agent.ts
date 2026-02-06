@@ -16,6 +16,7 @@ import { generateText } from "ai";
 // Agent State Interface
 interface TradingAgentState {
   messages: Array<{ role: string; content: string }>;
+  correctedPrompt?: string;
   coinId?: string;
   coinSymbol?: string;
   userPortfolio?: any[];
@@ -52,6 +53,28 @@ async function routerNode(state: TradingAgentState): Promise<Partial<TradingAgen
   }
 
   return { nextAction };
+}
+
+/**
+ * Spelling Correction Node - Fixes typos in user prompt
+ */
+async function correctSpellingNode(state: TradingAgentState): Promise<Partial<TradingAgentState>> {
+  try {
+    const lastMessage = state.messages[state.messages.length - 1].content;
+    const prompt = `Correct the spelling and grammar of the following cryptocurrency trading related user prompt. Only return the corrected text, nothing else. Do not add any conversational filler.
+    
+    Original: "${lastMessage}"`;
+
+    const { text } = await generateText({
+      model: getAIModel(),
+      prompt,
+    });
+
+    return { correctedPrompt: text.trim() };
+  } catch (error) {
+    console.error("Spelling correction error:", error);
+    return { correctedPrompt: state.messages[state.messages.length - 1].content };
+  }
 }
 
 /**
@@ -369,11 +392,25 @@ Provide actionable insights while emphasizing risk management. Be conversational
     const { text } = await generateText({
       model: getAIModel(),
       system: systemPrompt,
-      prompt: lastUserMessage,
+      prompt: state.correctedPrompt || lastUserMessage,
+    });
+
+    // Generate Easy Suggestion (TL;DR)
+    const easySuggestionPrompt = `Based on this analysis:
+    ${text}
+    
+    Provide a super simple, easy-to-understand 1-2 line suggestion for the user. 
+    If it's a buy signal, say something like "Looks good for a buy around $X". 
+    If it's risky, say "Better to wait, market is choppy". 
+    Keep it dead simple. No jargon.`;
+
+    const { text: easySuggestion } = await generateText({
+      model: getAIModel(),
+      prompt: easySuggestionPrompt,
     });
 
     return {
-      finalResponse: text,
+      finalResponse: text + `\n\n---\n\n**💡 Simple Suggestion:**\n${easySuggestion.trim()}`,
     };
   } catch (error) {
     console.error("Response generation error:", error);
@@ -392,7 +429,11 @@ export async function createTradingAgent() {
   // Simplified agent that routes to appropriate analysis
   return {
     invoke: async (state: TradingAgentState) => {
-      // Determine action
+      // Correct spelling first
+      const corrected = await correctSpellingNode(state);
+      state.correctedPrompt = corrected.correctedPrompt;
+
+      // Determine action using corrected prompt if available
       const action = await routerNode(state);
       state.nextAction = action.nextAction;
 
