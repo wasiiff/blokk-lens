@@ -21,6 +21,8 @@ A comprehensive cryptocurrency tracking and portfolio management platform built 
 ### AI Trading Assistant
 - **AI-Powered Analysis**: Get intelligent trading insights powered by OpenAI
 - **Technical Analysis**: Automated technical indicators and market trend analysis
+- **Draggable & Resizable UI**: Modern floating assistant with minimization support
+- **Session Continuity**: Seamlessly transition between the floating window and full-screen chat
 - **Chat History**: Persistent conversation history for continuous learning
 - **Market Predictions**: AI-driven price predictions and trading recommendations
 
@@ -179,6 +181,7 @@ blokk-lens/
 │   │   ├── CoinDetailClient.tsx
 │   │   ├── ConversionClient.tsx
 │   │   ├── CurrencySelector.tsx
+│   │   ├── DraggableTradingAssistant.tsx
 │   │   ├── FavoritesClient.tsx
 │   │   ├── MarketOverview.tsx
 │   │   ├── SearchContainer.tsx
@@ -195,10 +198,8 @@ blokk-lens/
 │   │   └── WalletConnectPrompt.tsx
 │   ├── trading-assistant/        # AI assistant components
 │   │   ├── ChatMarkdown.tsx
-│   │   ├── CoinAnalysisChat.tsx
 │   │   ├── PriceChart.tsx
-│   │   ├── TradingAssistant.tsx
-│   │   └── TradingAssistantPremium.tsx
+│   │   └── TradingAssistantRedesigned.tsx # Main Assistant Interface
 │   ├── ui/                       # Reusable UI components
 │   │   ├── background-patterns.tsx
 │   │   ├── borderbeam.tsx

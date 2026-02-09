@@ -156,7 +156,7 @@ blokk-lens/
 │   └── trading-assistant/ # AI assistant page
 ├── components/            # React components
 │   ├── auth/             # Authentication components
-│   ├── coins/            # Crypto-related components
+│   ├── coins/            # Crypto-related components (MarketOverview, DraggableTradingAssistant, etc.)
 │   ├── layout/           # Layout components
 │   ├── portfolio/        # Portfolio components
 │   ├── trading-assistant/# AI assistant components
