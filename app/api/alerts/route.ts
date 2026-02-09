@@ -64,6 +64,15 @@ export async function POST(req: NextRequest) {
       currentPrice,
     } = body;
 
+    // Check alert limit
+    const alertCount = await PriceAlert.countDocuments({ userId: user._id, isActive: true });
+    if (alertCount >= 50) {
+      return NextResponse.json(
+        { error: 'Alert limit reached. You can have a maximum of 50 active alerts.' },
+        { status: 400 }
+      );
+    }
+
     // Validation
     if (!coinId || !coinSymbol || !coinName || !alertType || !currentPrice) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

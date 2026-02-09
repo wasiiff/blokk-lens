@@ -110,8 +110,11 @@ export async function POST(req: NextRequest) {
       const currentPrice = prices[i];
       const signal = TradingAnalyzer.generateSignals(indicators, currentPrice);
 
-      // Apply strategy parameters
-      const minConfidence = strategyParams.minConfidence || 50;
+      // Apply strategy parameters with validation
+      let minConfidence = 50;
+      if (strategyParams && typeof strategyParams.minConfidence === 'number') {
+        minConfidence = Math.max(0, Math.min(100, strategyParams.minConfidence));
+      }
 
       // Buy signal
       if (signal.signal === 'buy' && position === 0 && signal.confidence >= minConfidence) {
@@ -129,7 +132,7 @@ export async function POST(req: NextRequest) {
       else if (signal.signal === 'sell' && position > 0 && signal.confidence >= minConfidence) {
         capital = position * currentPrice;
         const profit = capital - initialCapital;
-        
+
         if (profit > 0) {
           wins++;
         } else {

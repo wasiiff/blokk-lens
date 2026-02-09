@@ -3,18 +3,50 @@ import dbConnect from '@/lib/db';
 import PriceAlert from '@/models/PriceAlert';
 import { TradingAnalyzer } from '@/services/trading-analysis';
 
+// Rate limit store (in-memory for simplicity)
+type RateLimitEntry = {
+  count: number;
+  firstRequestAt: number;
+};
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10;
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const existing = rateLimitStore.get(key);
+  if (!existing) {
+    rateLimitStore.set(key, { count: 1, firstRequestAt: now });
+    return false;
+  }
+  if (now - existing.firstRequestAt > RATE_LIMIT_WINDOW_MS) {
+    rateLimitStore.set(key, { count: 1, firstRequestAt: now });
+    return false;
+  }
+  existing.count += 1;
+  return existing.count > RATE_LIMIT_MAX_REQUESTS;
+}
+
 /**
  * Alert Checker - Runs periodically to check if alerts should be triggered
  * This should be called by a cron job or scheduled task
  */
 export async function POST(req: NextRequest) {
   try {
-    // Verify this is an internal request (add authentication for production)
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      throw new Error('CRON_SECRET environment variable must be set for /api/alerts/check');
+    }
+
     const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET || 'dev-secret';
-    
     if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Basic rate limiting
+    const clientKey = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
+    if (isRateLimited(clientKey)) {
+      return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
     }
 
     await dbConnect();

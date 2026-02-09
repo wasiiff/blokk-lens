@@ -24,12 +24,10 @@ const PriceAlertSchema = new Schema<IPriceAlert>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     coinId: {
       type: String,
       required: true,
-      index: true,
     },
     coinSymbol: {
       type: String,

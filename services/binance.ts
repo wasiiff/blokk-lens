@@ -196,19 +196,25 @@ async function fetchWithRetry<T>(
       return await fetchWithTimeout<T>(url, timeoutMs);
     } catch (error) {
       lastError = error as Error;
-      
-      // Don't retry on 4xx errors (client errors)
-      if (lastError.message.includes("400") || 
-          lastError.message.includes("401") || 
-          lastError.message.includes("403") ||
-          lastError.message.includes("404")) {
+
+      // Don't retry on most 4xx errors (client errors)
+      // Exception: 429 (Too Many Requests) - should retry with backoff
+      const isRateLimit = lastError.message.includes("429");
+
+      if (!isRateLimit && (
+        lastError.message.includes("400") ||
+        lastError.message.includes("401") ||
+        lastError.message.includes("403") ||
+        lastError.message.includes("404"))) {
         throw lastError;
       }
 
       // Only retry if not the last attempt
       if (attempt < maxRetries) {
-        const delay = Math.min(1000 * Math.pow(2, attempt), 3000); // Exponential backoff, max 3s
-        console.log(`[Binance] Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
+        // Use longer delay for rate limits
+        const baseDelay = isRateLimit ? 2000 : 1000;
+        const delay = Math.min(baseDelay * Math.pow(2, attempt), 10000);
+        console.log(`[Binance] ${isRateLimit ? 'Rate limited, ' : ''}Retry attempt ${attempt + 1}/${maxRetries} after ${delay}ms`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }

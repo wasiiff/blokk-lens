@@ -277,7 +277,7 @@ export async function getMarketCoins(options: {
           id: coin.coinGeckoId,
           symbol: coin.symbol.replace("USDT", "").toLowerCase(),
           name: coinName,
-          image: `https://assets.coingecko.com/coins/images/1/small/${coin.coinGeckoId}.png`,
+          image: "", // Omit broken hardcoded images when falling back to Binance
           current_price: coin.currentPrice,
           market_cap: 0, // Binance doesn't provide this
           market_cap_rank: index + 1,
@@ -353,9 +353,9 @@ export async function getCoinDetails(coinId: string): Promise<CoinDetailsResult>
           symbol: priceData.symbol.replace("USDT", "").toLowerCase(),
           name: coinName,
           image: {
-            large: `https://assets.coingecko.com/coins/images/1/large/${coinId}.png`,
-            small: `https://assets.coingecko.com/coins/images/1/small/${coinId}.png`,
-            thumb: `https://assets.coingecko.com/coins/images/1/thumb/${coinId}.png`,
+            large: "",
+            small: "",
+            thumb: "",
           },
           market_data: {
             current_price: { usd: priceData.currentPrice },
