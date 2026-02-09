@@ -101,6 +101,8 @@ async function getMarketContext(coinId?: string) {
         athChangePercentage: details.market_data.ath_change_percentage?.usd,
         circulatingSupply: details.market_data.circulating_supply,
         totalSupply: details.market_data.total_supply,
+        priceChange7d: priceChange7d || 0,
+        priceChange30d: priceChange30d || 0,
       },
       technicalAnalysis: {
         indicators,
@@ -284,53 +286,30 @@ export async function POST(req: Request) {
       system: enhancedPrompt,
       messages: messages,
       temperature: AI_CONFIG.temperature,
-    });
-
-    // Get the full response text
-    const stream = result.toTextStreamResponse();
-
-    // Save chat history after streaming completes (if user is authenticated)
-    if (session?.user && sessionId) {
-      // Clone the stream so we can read it
-      const [stream1, stream2] = stream.body ? stream.body.tee() : [null, null];
-
-      if (stream1 && stream2) {
-        // Read the full response in the background
-        (async () => {
+      onFinish: async ({ text }) => {
+        // Save chat history after streaming completes (if user is authenticated)
+        if (session?.user && sessionId && text) {
           try {
-            const reader = stream2.getReader();
-            const decoder = new TextDecoder();
-            let fullResponse = '';
-
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              fullResponse += decoder.decode(value, { stream: true });
-            }
-
             // Save both user message and AI response
             const allMessages = [
               ...messages,
-              { role: 'assistant', content: fullResponse }
+              { role: 'assistant', content: text }
             ];
 
             await saveChatHistory(session.user.id, sessionId, allMessages, coinId, marketContext);
           } catch (err) {
             console.error('Failed to save chat history:', err);
           }
-        })();
+        }
+      },
+    });
 
-        return new Response(stream1, {
-          headers: stream.headers,
-        });
-      }
-    }
-
-    return stream;
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Trading assistant error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: 'Failed to process request' }),
+      JSON.stringify({ error: `Failed to process request: ${errorMessage}` }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Metadata } from 'next';
 import TradingAssistantRedesigned from '@/components/trading-assistant/TradingAssistantRedesigned';
 
@@ -8,6 +9,8 @@ export const metadata: Metadata = {
 
 export default function TradingAssistantPage() {
   return (
-    <TradingAssistantRedesigned />
+    <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-background">Loading...</div>}>
+      <TradingAssistantRedesigned />
+    </Suspense>
   );
 }

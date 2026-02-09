@@ -1,5 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 /**
  * AI Configuration for Trading Assistant
@@ -28,7 +29,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 const getProvider = () => {
   // Check for Vercel AI Gateway first (recommended)
   const AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY;
-  
+
   if (AI_GATEWAY_API_KEY) {
     // Use Vercel AI Gateway - unified access to all providers
     console.log('✅ Using Vercel AI Gateway');
@@ -38,24 +39,45 @@ const getProvider = () => {
       baseURL: 'https://ai-gateway.vercel.sh/v1',
     });
   }
-  
+
+  // Check for Google Generative AI API (Gemini)
+  const GOOGLE_GENERATIVE_AI_API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+
+  if (GOOGLE_GENERATIVE_AI_API_KEY) {
+    console.log('✅ Using Google Generative AI (Gemini)');
+    return createGoogleGenerativeAI({
+      apiKey: GOOGLE_GENERATIVE_AI_API_KEY,
+    });
+  }
+
   // Fallback to direct OpenAI API
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-  
+
   if (OPENAI_API_KEY) {
     console.log('✅ Using Direct OpenAI API');
     return createOpenAI({
       apiKey: OPENAI_API_KEY,
     });
   }
-  
+
   console.error('❌ No API key found!');
   console.error('   Option 1: Add AI_GATEWAY_API_KEY to .env (get from Vercel Dashboard)');
-  console.error('   Option 2: Add OPENAI_API_KEY to .env (get from https://platform.openai.com/api-keys)');
-  throw new Error('Missing API key: Set AI_GATEWAY_API_KEY or OPENAI_API_KEY in .env');
+  console.error('   Option 2: Add GOOGLE_GENERATIVE_AI_API_KEY to .env (get from Google AI Studio)');
+  console.error('   Option 3: Add OPENAI_API_KEY to .env (get from https://platform.openai.com/api-keys)');
+  throw new Error('Missing API key: Set AI_GATEWAY_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or OPENAI_API_KEY in .env');
 };
 
 export const aiProvider = getProvider();
+
+// Helper to determine active provider type
+const getActiveProviderType = () => {
+  if (process.env.AI_GATEWAY_API_KEY) return 'vercel';
+  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return 'google';
+  if (process.env.OPENAI_API_KEY) return 'openai';
+  return 'none';
+};
+
+export const providerType = getActiveProviderType();
 
 export const AI_MODELS = {
   // Latest and Most Powerful Models (Vercel AI Gateway)
@@ -65,37 +87,38 @@ export const AI_MODELS = {
   GPT4_TURBO: 'openai/gpt-4-turbo',                           // GPT-4 Turbo
   GEMINI_PRO_2: 'google/gemini-2.0-pro-exp',                  // Latest Gemini Pro
   GEMINI_FLASH_2: 'google/gemini-2.0-flash-exp',              // Fast Gemini
-  
+
   // Legacy Models (for fallback)
   GPT4: 'openai/gpt-4',
   GPT35_TURBO: 'openai/gpt-3.5-turbo',
 } as const;
 
 export const AI_CONFIG = {
-  // Use the most powerful model for trading analysis
-  // Claude Sonnet 4 is excellent for financial analysis and reasoning
-  defaultModel: AI_MODELS.CLAUDE_SONNET_4,
-  
+  // Use the most powerful model compatible with the active provider
+  defaultModel: providerType === 'google'
+    ? AI_MODELS.GEMINI_PRO_2
+    : (providerType === 'openai' ? AI_MODELS.GPT4O : AI_MODELS.CLAUDE_SONNET_4),
+
   // Fallback models if primary fails
   fallbackModels: [
     AI_MODELS.GPT4O,           // GPT-4o as first fallback
     AI_MODELS.GEMINI_PRO_2,    // Gemini Pro as second fallback
     AI_MODELS.GPT4_TURBO,      // GPT-4 Turbo as third fallback
   ],
-  
+
   // Temperature: 0 = deterministic, 1 = creative
   // For trading analysis, we want balanced creativity with accuracy
   temperature: 0.7,
-  
+
   // Maximum tokens in response (increased for detailed analysis)
   maxTokens: 2000,
-  
+
   // Top P: nucleus sampling parameter
   topP: 1,
-  
+
   // Frequency penalty: reduce repetition
   frequencyPenalty: 0,
-  
+
   // Presence penalty: encourage new topics
   presencePenalty: 0,
 } as const;
@@ -110,19 +133,36 @@ export const AI_CONFIG = {
  * 
  * The function will automatically try fallback models if primary fails
  */
-export function getAIModel(modelName?: string, options?: { 
+export function getAIModel(modelName?: string, options?: {
   temperature?: number;
   maxTokens?: number;
   tryFallback?: boolean;
 }) {
-  const model = modelName || AI_CONFIG.defaultModel;
-  const temperature = options?.temperature ?? AI_CONFIG.temperature;
-  const maxTokens = options?.maxTokens ?? AI_CONFIG.maxTokens;
-  
-  return aiProvider(model, {
-    temperature,
-    maxTokens,
-  });
+  let model = modelName || AI_CONFIG.defaultModel;
+
+  // Logic to handle provider compatibility
+  if (providerType === 'google') {
+    // If asking for non-google model while on google provider, fallback to default google model
+    if (!model.includes('gemini') && !model.includes('google')) {
+      console.warn(`⚠️ Requested model ${model} not compatible with Google provider. Using default.`);
+      model = AI_CONFIG.defaultModel;
+    }
+    // Strip 'google/' prefix for direct SDK usage if needed, though some versions handle it.
+    // Use safe naming for Google SDK
+    if (model.includes('google/')) {
+      model = model.replace('google/', '');
+    }
+  } else if (providerType === 'openai') {
+    // If asking for non-openai model while on openai provider
+    if (!model.includes('gpt') && !model.includes('openai')) {
+      console.warn(`⚠️ Requested model ${model} not compatible with OpenAI provider. Using default.`);
+      model = AI_CONFIG.defaultModel;
+    }
+  }
+
+  // Temperature and maxTokens should be passed to generateText/streamText,
+  // as they cannot be configured on the model instance directly in the Vercel AI SDK.
+  return aiProvider(model);
 }
 
 /**
@@ -130,8 +170,16 @@ export function getAIModel(modelName?: string, options?: {
  * Tries primary model first, then fallbacks if it fails
  */
 export async function getAIModelWithFallback() {
-  const models = [AI_CONFIG.defaultModel, ...AI_CONFIG.fallbackModels];
-  
+  // Filter fallbacks based on provider compatibility
+  const models = [
+    AI_CONFIG.defaultModel,
+    ...AI_CONFIG.fallbackModels.filter(m => {
+      if (providerType === 'google') return m.includes('gemini') || m.includes('google');
+      if (providerType === 'openai') return m.includes('gpt') || m.includes('openai');
+      return true; // Gateway supports all
+    })
+  ];
+
   for (const model of models) {
     try {
       return getAIModel(model);
@@ -140,7 +188,7 @@ export async function getAIModelWithFallback() {
       continue;
     }
   }
-  
+
   throw new Error('All AI models failed to initialize');
 }
 
@@ -158,7 +206,7 @@ export const MODEL_COSTS = {
     input: 15.00,  // $15.00 per 1M input tokens
     output: 75.00, // $75.00 per 1M output tokens
   },
-  
+
   // OpenAI GPT-4 (Reliable and fast)
   [AI_MODELS.GPT4O]: {
     input: 2.50,   // $2.50 per 1M input tokens
@@ -176,7 +224,7 @@ export const MODEL_COSTS = {
     input: 0.50,
     output: 1.50,
   },
-  
+
   // Google Gemini (Good value)
   [AI_MODELS.GEMINI_PRO_2]: {
     input: 1.25,   // $1.25 per 1M input tokens
@@ -198,11 +246,11 @@ export function estimateCost(
 ): number {
   const costs = MODEL_COSTS[model as keyof typeof MODEL_COSTS];
   if (!costs) return 0;
-  
+
   // Costs are per 1M tokens, so divide by 1,000,000
   const inputCost = (inputTokens / 1_000_000) * costs.input;
   const outputCost = (outputTokens / 1_000_000) * costs.output;
-  
+
   return inputCost + outputCost;
 }
 
@@ -318,16 +366,16 @@ Provide detailed risk metrics with confidence intervals and scenario analysis.`,
 export const RATE_LIMITS = {
   // Requests per minute per user
   requestsPerMinute: 10,
-  
+
   // Requests per hour per user
   requestsPerHour: 50,
-  
+
   // Requests per day per user
   requestsPerDay: 200,
-  
+
   // Maximum message length
   maxMessageLength: 1000,
-  
+
   // Maximum messages in conversation
   maxMessagesInConversation: 50,
 } as const;
@@ -338,22 +386,22 @@ export const RATE_LIMITS = {
 export const FEATURE_FLAGS = {
   // Enable chat history saving
   enableChatHistory: true,
-  
+
   // Enable technical analysis
   enableTechnicalAnalysis: true,
-  
+
   // Enable price charts
   enablePriceCharts: true,
-  
+
   // Enable suggested prompts
   enableSuggestedPrompts: true,
-  
+
   // Enable copy functionality
   enableCopyMessages: true,
-  
+
   // Enable feedback buttons
   enableFeedback: false,
-  
+
   // Enable voice input
   enableVoiceInput: false,
 } as const;

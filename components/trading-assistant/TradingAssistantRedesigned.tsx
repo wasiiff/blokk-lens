@@ -26,6 +26,7 @@ import {
   PanelLeft,
   Github,
   ArrowUp,
+  ArrowLeft,
   Users,
   Plus,
 } from 'lucide-react';
@@ -35,6 +36,7 @@ import ChatMarkdown from './ChatMarkdown';
 import { useSession } from 'next-auth/react';
 import { Logo } from '@/components/ui/logo';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 interface SuggestedPrompt {
   icon: React.ReactNode;
@@ -113,13 +115,15 @@ interface TradingAssistantRedesignedProps {
   coinSymbol?: string;
   isEmbedded?: boolean;
   forceMobile?: boolean;
+  onSessionIdChange?: (sessionId: string) => void;
 }
 
 function TradingAssistantRedesigned({ 
   coinId, 
   coinSymbol, 
   isEmbedded = false,
-  forceMobile = false 
+  forceMobile = false,
+  onSessionIdChange
 }: TradingAssistantRedesignedProps) {
   const { data: session } = useSession();
   const [sessionId, setSessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
@@ -127,8 +131,39 @@ function TradingAssistantRedesigned({
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Default to closed for mobile-first
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const querySessionId = searchParams.get('sessionId');
+
+  // Notify parent of session ID changes
+  useEffect(() => {
+    if (onSessionIdChange) {
+      onSessionIdChange(sessionId);
+    }
+  }, [sessionId, onSessionIdChange]);
+
+  // Handle responsive sidebar state
+  useEffect(() => {
+    const handleResize = () => {
+      if (!forceMobile) {
+        if (window.innerWidth >= 1024) {
+          setSidebarOpen(true);
+        } else {
+          setSidebarOpen(false);
+        }
+      }
+    };
+
+    // Set initial state
+    handleResize();
+
+    // Cleanup not strictly needed as its a simple state set, 
+    // but good practice if we want it to react to window resize
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [forceMobile]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -156,6 +191,13 @@ function TradingAssistantRedesigned({
       loadChatHistory();
     }
   }, [session, loadChatHistory]);
+
+  // Handle sessionId from query params
+  useEffect(() => {
+    if (querySessionId && session?.user) {
+      loadChatSession(querySessionId);
+    }
+  }, [querySessionId, session]);
 
   const loadChatSession = async (sid: string) => {
     try {
@@ -265,7 +307,16 @@ function TradingAssistantRedesigned({
         signal: abortControllerRef.current.signal,
       });
 
-      if (!response.ok) throw new Error('Failed to get response');
+      if (!response.ok) {
+        let errorMsg = 'Failed to get response';
+        try {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorData.message || errorMsg;
+        } catch {
+          errorMsg = response.statusText;
+        }
+        throw new Error(errorMsg);
+      }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
@@ -344,7 +395,7 @@ function TradingAssistantRedesigned({
         {sidebarOpen && (
           <motion.div
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 250, opacity: 1 }}
+            animate={{ width: 256, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
             className={cn(
@@ -355,7 +406,10 @@ function TradingAssistantRedesigned({
              <div className="w-64 flex flex-col h-full">
               {/* Header with logo and close button */}
         <div className="h-14 px-4 flex items-center justify-between border-b border-dashed border-border">
-          <div className="flex items-center gap-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => router.push('/')}
+          >
             <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center p-1">
               <Logo size="sm" className="w-full h-full text-primary" />
             </div>
@@ -363,12 +417,13 @@ function TradingAssistantRedesigned({
               <h1 className="text-sm font-bold">BlokkLens</h1>
             </div>
           </div>
-          {/* Close button for mobile */}
+          {/* Close button for mobile only */}
           <Button
             variant="ghost"
             size="icon"
-            className={cn(!forceMobile && "lg:hidden")}
             onClick={() => setSidebarOpen(false)}
+            className="lg:hidden"
+            title="Close sidebar"
           >
             <X className="w-4 h-4" />
           </Button>
@@ -462,46 +517,56 @@ function TradingAssistantRedesigned({
         )}
       </AnimatePresence>
 
-      {/* Collapsed Sidebar - Icon Only - Desktop Only - Hide if forceMobile */}
-      {!sidebarOpen && !forceMobile && (
-        <div className="hidden lg:flex w-16 bg-card border-r border-dashed border-border flex-col items-center">
-          {/* Logo - matches expanded state height */}
-          <div className="h-14 flex items-center justify-center border-b border-dashed border-border w-full">
-            <Logo size="sm" className="w-6 h-6 text-primary" />
-          </div>
-
-          {/* New Chat Icon - matches expanded padding */}
-          <div className="py-2.5 border-b border-dashed border-border w-full flex justify-center">
-            <button
-              onClick={startNewChat}
-              className="w-9 h-9 rounded-lg hover:bg-primary/10 text-primary flex items-center justify-center transition-colors"
-              title="New Chat"
+      {/* Collapsed Sidebar - Icon Only - Desktop Only - Hide if forceMobile or sidebar is open */}
+      <AnimatePresence>
+        {!sidebarOpen && !forceMobile && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 64, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            className="hidden lg:flex w-16 bg-card border-r border-dashed border-border flex-col items-center z-30"
+          >
+            {/* Logo area - matches expanded state height */}
+            <div 
+              className="h-14 flex items-center justify-center border-b border-dashed border-border w-full cursor-pointer hover:bg-primary/5 transition-colors"
+              onClick={() => router.push('/')}
             >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
+              <Logo size="sm" className="w-6 h-6 text-primary" />
+            </div>
 
-          {/* Spacer for chat history */}
-          <div className="flex-1 w-full" />
-
-          {/* User Icon at Bottom - matches expanded padding */}
-          <div className="p-2.5 border-t border-dashed border-border w-full flex justify-center">
-            {session?.user ? (
-              <div className="w-7 h-7 rounded-full flex items-center justify-center">
-                <User className="w-3.5 h-3.5 text-primary" />
-              </div>
-            ) : (
+            {/* New Chat Icon - matches expanded padding */}
+            <div className="py-2.5 border-b border-dashed border-border w-full flex justify-center">
               <button
-                onClick={() => window.location.href = '/auth/login'}
-                className="w-7 h-7 rounded-full hover:bg-primary/10 flex items-center justify-center transition-colors"
-                title="Login"
+                onClick={startNewChat}
+                className="w-9 h-9 rounded-lg hover:bg-primary/10 text-primary flex items-center justify-center transition-colors"
+                title="New Chat"
               >
-                <User className="w-3.5 h-3.5 text-primary" />
+                <Plus className="w-4 h-4" />
               </button>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
+
+            {/* Spacer for chat history */}
+            <div className="flex-1 w-full" />
+
+            {/* User Icon at Bottom - matches expanded padding */}
+            <div className="p-2.5 border-t border-dashed border-border w-full flex justify-center">
+              {session?.user ? (
+                <div className="w-7 h-7 rounded-full flex items-center justify-center">
+                  <User className="w-3.5 h-3.5 text-primary" />
+                </div>
+              ) : (
+                <button
+                  onClick={() => window.location.href = '/auth/login'}
+                  className="w-7 h-7 rounded-full hover:bg-primary/10 flex items-center justify-center transition-colors"
+                  title="Login"
+                >
+                  <User className="w-3.5 h-3.5 text-primary" />
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -511,12 +576,47 @@ function TradingAssistantRedesigned({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={cn("text-muted-foreground hover:text-foreground", !forceMobile && "lg:hidden")}
+              onClick={() => router.back()}
+              title="Go back"
+              className="text-foreground hover:bg-muted/50"
             >
-              {sidebarOpen ? <PanelLeftClose className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <ArrowLeft className="w-5 h-5" />
             </Button>
-            <span className="text-sm font-semibold">BlokkLens AI</span>
+            <div className="w-px h-6 bg-border mx-1 hidden sm:block" />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              title={sidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+              className="text-foreground hover:bg-muted/50"
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={sidebarOpen ? 'open' : 'closed'}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {sidebarOpen ? (
+                    <PanelLeftClose className="w-5 h-5 hidden lg:block" />
+                  ) : (
+                    <PanelLeft className="w-5 h-5 hidden lg:block" />
+                  )}
+                  {sidebarOpen ? (
+                     <X className="w-5 h-5 lg:hidden" />
+                  ) : (
+                    <Menu className="w-5 h-5 lg:hidden" />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </Button>
+            <span 
+              className="text-sm font-semibold cursor-pointer hover:text-primary transition-colors"
+              onClick={() => router.push('/')}
+            >
+              BlokkLens AI
+            </span>
           </div>
           
           <div className="flex items-center gap-2">

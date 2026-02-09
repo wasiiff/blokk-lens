@@ -32,8 +32,10 @@ interface CoinDetailClientProps {
 const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailClientProps) {
   const { data: session } = useSession()
   const router = useRouter()
+
   const queryClient = useQueryClient()
   const [isFavorite, setIsFavorite] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   const { data: coin, isLoading } = useQuery({
     queryKey: ["coin", coinId],
@@ -170,11 +172,14 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
     <>
       {/* Enhanced Coin-specific AI Chat */}
       {/* Floating Draggable AI Assistant with New Interface */}
+      {/* Floating Draggable AI Assistant with New Interface */}
       <DraggableTradingAssistant 
         coinId={coinId} 
         coinSymbol={coin.symbol} 
         coinName={coin.name}
         currentPrice={currentPrice}
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
       />
       
       <div className="relative w-full py-4 sm:py-6 md:py-8">
@@ -229,6 +234,16 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsChatOpen(true)}
+                    className="h-8 sm:h-10 gap-2 rounded-full border-primary/20 hover:bg-primary/10 hover:text-primary transition-all"
+                  >
+                    <Bot className="w-4 h-4" />
+                    <span className="hidden sm:inline">Ask AI</span>
                   </Button>
                 </div>
               </div>
