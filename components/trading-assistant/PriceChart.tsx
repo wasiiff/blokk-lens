@@ -27,9 +27,15 @@ export default function PriceChart({ coinId, days = 30 }: PriceChartProps) {
     async function fetchData() {
       try {
         setLoading(true);
+        // Use our backend API to avoid CORS and API key issues
         const response = await fetch(
-          `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`
+          `/api/coins/chart?coinId=${coinId}&days=${days}`
         );
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch chart data');
+        }
+        
         const data = await response.json();
 
         const prices = data.prices.map((p: [number, number]) => p[1]);

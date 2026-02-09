@@ -1,10 +1,10 @@
-import { getMarketCoins } from "@/services/coingecko";
+import { getMarketCoins } from "@/services/crypto-service";
 import { NextResponse } from "next/server";
 
 // Enhanced in-memory cache with better management
 const marketCoinsCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 120000; // 2 minutes
-const STALE_CACHE_DURATION = 600000; // 10 minutes
+const CACHE_DURATION = 300000; // 5 minutes
+const STALE_CACHE_DURATION = 900000; // 15 minutes
 
 // Pending requests to prevent duplicate calls
 const pendingRequests = new Map<string, Promise<any>>();

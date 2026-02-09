@@ -63,7 +63,15 @@ export default function HeroSection() {
               Track Crypto
             </span>
             <br />
-            <span className="bg-gradient-to-r from-primary via-purple-500 to-primary bg-clip-text text-transparent">
+            <span 
+              className="font-bold"
+              style={{
+                WebkitTextFillColor: 'transparent',
+                WebkitTextStrokeWidth: '2px',
+                WebkitTextStrokeColor: '#6366f1',
+                color: 'transparent',
+              }}
+            >
               Like Never Before
             </span>
           </h1>

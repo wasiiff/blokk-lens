@@ -12,6 +12,16 @@ import { useSession } from "next-auth/react"
 import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from "react"
 import { useRouter } from "next/navigation"
 
+import AlertsManager from "@/components/alerts/AlertsManager"
+import BacktestRunner from "@/components/backtest/BacktestRunner"
+import dynamic from "next/dynamic"
+
+// Dynamic import for DraggableTradingAssistant to avoid SSR issues and circular dependencies
+const DraggableTradingAssistant = dynamic(
+  () => import("@/components/coins/DraggableTradingAssistant"),
+  { ssr: false }
+)
+
 // Lazy load heavy components
 const PriceChart = lazy(() => import("@/components/trading-assistant/PriceChart"))
 
@@ -22,8 +32,10 @@ interface CoinDetailClientProps {
 const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailClientProps) {
   const { data: session } = useSession()
   const router = useRouter()
+
   const queryClient = useQueryClient()
   const [isFavorite, setIsFavorite] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   const { data: coin, isLoading } = useQuery({
     queryKey: ["coin", coinId],
@@ -157,10 +169,23 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
   if (!coin) return null
 
   return (
-    <div className="relative w-full py-4 sm:py-6 md:py-8">
-      <div className="absolute -right-20 top-0 pointer-events-none opacity-10 hidden lg:block">
-        <CircuitDecoration className="w-96 h-96" />
-      </div>
+    <>
+      {/* Enhanced Coin-specific AI Chat */}
+      {/* Floating Draggable AI Assistant with New Interface */}
+      {/* Floating Draggable AI Assistant with New Interface */}
+      <DraggableTradingAssistant 
+        coinId={coinId} 
+        coinSymbol={coin.symbol} 
+        coinName={coin.name}
+        currentPrice={currentPrice}
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+      />
+      
+      <div className="relative w-full py-4 sm:py-6 md:py-8">
+        <div className="absolute -right-20 top-0 pointer-events-none opacity-10 hidden lg:block">
+          <CircuitDecoration className="w-96 h-96" />
+        </div>
 
       <Link href="/">
         <Button variant="ghost" className="mb-4 sm:mb-6 flex items-center gap-2">
@@ -195,19 +220,6 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                     </div>
                   )}
                   <Button
-                    variant="outline"
-                    size="sm"
-                    disabled
-                    className="gap-2 border-primary/20 bg-muted/30 cursor-not-allowed opacity-60"
-                  >
-                    <Bot className="w-4 h-4" />
-                    <span className="hidden sm:inline">Ask AI</span>
-                    <span className="sm:hidden">AI</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
-                      Soon
-                    </span>
-                  </Button>
-                  <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleToggleFavorite}
@@ -222,6 +234,16 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsChatOpen(true)}
+                    className="h-8 sm:h-10 gap-2 rounded-full border-primary/20 hover:bg-primary/10 hover:text-primary transition-all"
+                  >
+                    <Bot className="w-4 h-4" />
+                    <span className="hidden sm:inline">Ask AI</span>
                   </Button>
                 </div>
               </div>
@@ -300,6 +322,15 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
         </div>
 
         <div className="space-y-4 sm:space-y-6">
+          <AlertsManager
+            coinId={coinId}
+            coinSymbol={coin.symbol}
+            coinName={coin.name}
+            currentPrice={currentPrice}
+          />
+
+          <BacktestRunner coinId={coinId} coinSymbol={coin.symbol} />
+
           <Card className="glass-card-light border border-border">
             <CardHeader className="p-4 sm:p-6">
               <CardTitle className="card-text text-lg sm:text-xl">Links</CardTitle>
@@ -358,6 +389,7 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
         </div>
       </div>
     </div>
+    </>
   )
 })
 

@@ -1,24 +1,47 @@
 import { NextResponse } from "next/server";
+import { getGlobalData } from "@/services/crypto-service";
 
-const BASE_URL = process.env.COINGECKO_BASE_URL!;
+// Cache for global data
+const globalCache = { data: null as any, timestamp: 0 };
+const CACHE_DURATION = 60000; // 1 minute
+const STALE_CACHE_DURATION = 300000; // 5 minutes
 
 export async function GET() {
-  try {
-    const res = await fetch(`${BASE_URL}/global`, {
+  const now = Date.now();
+
+  // Check fresh cache
+  if (globalCache.data && now - globalCache.timestamp < CACHE_DURATION) {
+    return NextResponse.json(globalCache.data, {
       headers: {
-        Accept: "application/json",
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "X-Cache": "HIT",
       },
-      next: { revalidate: 60 }, // Cache for 60 seconds
     });
+  }
 
-    if (!res.ok) {
-      throw new Error("CoinGecko API error");
-    }
+  try {
+    const data = await getGlobalData();
+    globalCache.data = data;
+    globalCache.timestamp = now;
 
-    const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "X-Cache": "MISS",
+      },
+    });
   } catch (error) {
     console.error("Error fetching global market data:", error);
+
+    // Use stale cache
+    if (globalCache.data && now - globalCache.timestamp < STALE_CACHE_DURATION) {
+      return NextResponse.json(globalCache.data, {
+        headers: {
+          "X-Cache": "STALE",
+        },
+      });
+    }
+
     return NextResponse.json(
       { error: "Failed to fetch global market data" },
       { status: 500 }

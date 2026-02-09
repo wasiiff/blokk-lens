@@ -1,4 +1,4 @@
-import { getTrendingCoins } from "@/services/coingecko";
+import { getTrendingCoins } from "@/services/crypto-service";
 
 // Cache for trending coins
 const trendingCache = { data: null as any, timestamp: 0 };
