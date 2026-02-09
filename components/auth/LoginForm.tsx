@@ -63,7 +63,7 @@ function LoginForm() {
               <Logo size="lg" />
             </div>
             <h1 className="text-2xl font-semibold card-text mb-2">Welcome back</h1>
-            <p className="card-text-muted text-sm">Sign in to access your watchlists and alerts</p>
+            <p className="card-text-muted text-sm">Sign in to access your watchlists and insights</p>
           </div>
 
           {/* Form */}

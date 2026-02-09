@@ -12,7 +12,6 @@ import { useSession } from "next-auth/react"
 import { useState, useEffect, useCallback, useMemo, memo, lazy, Suspense } from "react"
 import { useRouter } from "next/navigation"
 
-import AlertsManager from "@/components/alerts/AlertsManager"
 import BacktestRunner from "@/components/backtest/BacktestRunner"
 import dynamic from "next/dynamic"
 
@@ -322,13 +321,6 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
         </div>
 
         <div className="space-y-4 sm:space-y-6">
-          <AlertsManager
-            coinId={coinId}
-            coinSymbol={coin.symbol}
-            coinName={coin.name}
-            currentPrice={currentPrice}
-          />
-
           <BacktestRunner coinId={coinId} coinSymbol={coin.symbol} />
 
           <Card className="glass-card-light border border-border">

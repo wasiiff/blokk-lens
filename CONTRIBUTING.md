@@ -97,7 +97,7 @@ Priority areas for contribution:
 - Additional blockchain integrations
 - Advanced technical indicators
 - Enhanced AI trading insights
-- Price alerts and notifications
+- [ ] Advanced portfolio analytics and reporting
 - Social trading features
 - DeFi protocol integration
 - NFT portfolio tracking
@@ -355,7 +355,7 @@ Here are some areas where we'd love contributions:
 **Market Data**
 - Additional cryptocurrency exchanges integration
 - Advanced charting tools with more indicators
-- Custom watchlists and alerts
+- Custom watchlists and portfolio tracking
 - Market sentiment analysis
 
 **AI & Analysis**
@@ -379,7 +379,7 @@ Here are some areas where we'd love contributions:
 **Additional Features**
 - NFT portfolio tracking
 - News aggregation and sentiment
-- Price alerts and notifications
+- Advanced portfolio analytics and reporting
 - Mobile app (React Native)
 - Multi-language support
 - Export/import portfolio data

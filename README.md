@@ -434,7 +434,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Roadmap 🗺️
 
 Upcoming features:
-- [ ] Price alerts and notifications
+- [ ] Advanced portfolio analytics and reporting
 - [ ] Advanced charting with technical indicators
 - [ ] Social trading features
 - [ ] DeFi protocol integration
