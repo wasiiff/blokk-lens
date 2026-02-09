@@ -67,10 +67,10 @@ export default function Page() {
 
               <div className="bg-muted/50 backdrop-blur-sm rounded-xl p-5 border border-border hover:border-border/80 transition-all">
                 <div className="w-10 h-10 rounded-lg bg-background border border-border flex items-center justify-center mb-3">
-                  <Bell className="w-5 h-5 text-foreground" />
+                  <Sparkles className="w-5 h-5 text-foreground" />
                 </div>
-                <h3 className="font-semibold text-foreground text-sm mb-1">Price Alerts</h3>
-                <p className="text-xs text-muted-foreground">Never miss a move</p>
+                <h3 className="font-semibold text-foreground text-sm mb-1">Smart Watchlist</h3>
+                <p className="text-xs text-muted-foreground">Track your favorites</p>
               </div>
 
               <div className="bg-muted/50 backdrop-blur-sm rounded-xl p-5 border border-border hover:border-border/80 transition-all">

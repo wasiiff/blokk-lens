@@ -215,7 +215,7 @@ Be specific and actionable.`;
  */
 async function backtestNode(state: TradingAgentState): Promise<Partial<TradingAgentState>> {
   try {
-    const { priceData, signals } = state;
+    const { priceData } = state;
 
     if (!priceData || priceData.length < 30) {
       return { backtestResults: null };
@@ -337,7 +337,6 @@ async function responseGeneratorNode(state: TradingAgentState): Promise<Partial<
 
     const {
       messages,
-      coinSymbol,
       technicalAnalysis,
       signals,
       prediction,

@@ -10,7 +10,7 @@ export default function AboutSection() {
     { name: "Real-Time Market Data", description: "Track live cryptocurrency prices, market trends, and detailed analytics powered by CoinGecko API.", icon: TrendingUp, status: "Live" },
     { name: "AI Trading Assistant", description: "Get intelligent trading suggestions powered by AI. Our bot analyzes market trends and provides personalized recommendations.", icon: Bot, status: "Coming Soon" },
     { name: "Launch Your Coin", description: "Create and launch your own cryptocurrency with our easy-to-use platform. No technical knowledge required.", icon: Rocket, status: "Coming Soon" },
-    { name: "Smart Watchlist", description: "Save and monitor your favorite cryptocurrencies with real-time alerts and personalized insights.", icon: Sparkles, status: "Live" },
+    { name: "Smart Watchlist", description: "Save and monitor your favorite cryptocurrencies with personalized insights and real-time data.", icon: Sparkles, status: "Live" },
     { name: "Lightning Fast", description: "Built with Next.js 14 for optimal performance, instant page loads, and seamless user experience.", icon: Zap, status: "Live" },
   ]
 

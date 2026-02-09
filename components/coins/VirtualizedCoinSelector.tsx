@@ -104,14 +104,16 @@ export default function VirtualizedCoinSelector({
         infinite: false,
       })
 
+      let rafId: number;
       function raf(time: number) {
         lenisRef.current?.raf(time)
-        requestAnimationFrame(raf)
+        rafId = requestAnimationFrame(raf)
       }
 
-      requestAnimationFrame(raf)
+      rafId = requestAnimationFrame(raf)
 
       return () => {
+        if (rafId) cancelAnimationFrame(rafId)
         lenisRef.current?.destroy()
         lenisRef.current = null
       }
