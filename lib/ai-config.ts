@@ -81,8 +81,9 @@ export const providerType = getActiveProviderType();
 
 export const AI_MODELS = {
   // Latest and Most Powerful Models (Vercel AI Gateway)
-  QWEN_MAX: 'alibaba/qwen3-max',                               // Qwen 3 Max - Best reasoning
-  QWEN_PLUS: 'alibaba/qwen3.5-plus',                           // Qwen 3.5 Plus - Balanced
+  QWEN_PLUS: 'alibaba/qwen3.5-plus',                          // Qwen 3.5 Plus - Best overall, multimodal, 1M context
+  QWEN_MAX_THINKING: 'alibaba/qwen3-max-thinking',            // Advanced reasoning with search & tool use
+  QWEN_32B: 'alibaba/qwen-3-32b',                             // Solid performance, cost-effective
   GPT4O: 'openai/gpt-4o',                                      // Latest GPT-4 Optimized
   GPT4_TURBO: 'openai/gpt-4-turbo',                           // GPT-4 Turbo
   GEMINI_PRO_2: 'google/gemini-2.0-pro-exp',                  // Latest Gemini Pro
@@ -97,13 +98,14 @@ export const AI_CONFIG = {
   // Use the most powerful model compatible with the active provider
   defaultModel: providerType === 'google'
     ? AI_MODELS.GEMINI_PRO_2
-    : (providerType === 'openai' ? AI_MODELS.GPT4O : AI_MODELS.QWEN_MAX),
+    : (providerType === 'openai' ? AI_MODELS.GPT4O : AI_MODELS.QWEN_PLUS),
 
   // Fallback models if primary fails
   fallbackModels: [
-    AI_MODELS.QWEN_PLUS,       // Qwen Plus as first fallback
-    AI_MODELS.GPT4O,           // GPT-4o as second fallback
-    AI_MODELS.GEMINI_PRO_2,    // Gemini Pro as third fallback
+    AI_MODELS.QWEN_MAX_THINKING,  // Advanced reasoning as first fallback
+    AI_MODELS.QWEN_32B,            // Cost-effective as second fallback
+    AI_MODELS.GPT4O,               // GPT-4o as third fallback
+    AI_MODELS.GEMINI_PRO_2,        // Gemini Pro as fourth fallback
   ],
 
   // Temperature: 0 = deterministic, 1 = creative
@@ -127,7 +129,7 @@ export const AI_CONFIG = {
  * Get configured AI model instance with fallback support
  * 
  * With AI Gateway, you can use models from multiple providers:
- * - Alibaba: qwen3-max, qwen3.5-plus (Best for reasoning and cost-effective)
+ * - Alibaba Qwen: qwen3.5-plus (best overall), qwen3-max-thinking (advanced reasoning), qwen-3-32b (cost-effective)
  * - OpenAI: gpt-4o, gpt-4-turbo (Reliable and fast)
  * - Google: gemini-2.0-pro, gemini-2.0-flash (Good for analysis)
  * 
@@ -194,17 +196,21 @@ export async function getAIModelWithFallback() {
 
 /**
  * Cost estimation per 1M tokens (approximate)
- * Updated for latest models (January 2025)
+ * Updated for latest models (February 2025)
  */
 export const MODEL_COSTS = {
-  // Qwen Models (Best for reasoning)
-  [AI_MODELS.QWEN_MAX]: {
-    input: 2.00,   // $2.00 per 1M input tokens
-    output: 6.00,  // $6.00 per 1M output tokens
-  },
+  // Qwen Models (Best for reasoning and cost-effective)
   [AI_MODELS.QWEN_PLUS]: {
-    input: 0.50,   // $0.50 per 1M input tokens
-    output: 2.00,  // $2.00 per 1M output tokens
+    input: 0.80,   // $0.80 per 1M input tokens (estimated)
+    output: 2.40,  // $2.40 per 1M output tokens (estimated)
+  },
+  [AI_MODELS.QWEN_MAX_THINKING]: {
+    input: 2.00,   // $2.00 per 1M input tokens (estimated)
+    output: 6.00,  // $6.00 per 1M output tokens (estimated)
+  },
+  [AI_MODELS.QWEN_32B]: {
+    input: 0.40,   // $0.40 per 1M input tokens (estimated)
+    output: 1.20,  // $1.20 per 1M output tokens (estimated)
   },
 
   // OpenAI GPT-4 (Reliable and fast)
@@ -260,17 +266,17 @@ export function estimateCost(
 export function getRecommendedModel(useCase: 'analysis' | 'chat' | 'prediction' | 'fast'): string {
   switch (useCase) {
     case 'analysis':
-      // Best reasoning for complex analysis
-      return AI_MODELS.QWEN_MAX;
+      // Best reasoning for complex analysis with tool use
+      return AI_MODELS.QWEN_MAX_THINKING;
     case 'prediction':
-      // Good at pattern recognition
-      return AI_MODELS.QWEN_MAX;
+      // Strong reasoning and pattern recognition
+      return AI_MODELS.QWEN_PLUS;
     case 'chat':
-      // Fast and conversational
+      // Fast and conversational with good context
       return AI_MODELS.QWEN_PLUS;
     case 'fast':
-      // Fastest response
-      return AI_MODELS.GEMINI_FLASH_2;
+      // Fastest response with solid quality
+      return AI_MODELS.QWEN_32B;
     default:
       return AI_CONFIG.defaultModel;
   }
@@ -278,7 +284,7 @@ export function getRecommendedModel(useCase: 'analysis' | 'chat' | 'prediction' 
 
 /**
  * System prompts for different use cases
- * Optimized for Qwen Max and GPT-4o
+ * Optimized for Qwen 3.5 Plus and Qwen 3 Max Thinking models
  */
 export const SYSTEM_PROMPTS = {
   TRADING_ASSISTANT: `You are an elite cryptocurrency trading analyst with expertise in technical analysis, quantitative finance, and blockchain technology. You have access to real-time market data and advanced analytical tools.
