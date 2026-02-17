@@ -14,10 +14,11 @@ export const metadata: Metadata = {
   description: "Track real-time cryptocurrency prices, market caps, and trends. Save your favorite coins and stay updated.",
   icons: {
     icon: [
-      { url: '/blokklens.svg', type: 'image/svg+xml' },
+      { url: '/blokklensDark.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: dark)' },
+      { url: '/blokklensLight.svg', type: 'image/svg+xml', media: '(prefers-color-scheme: light)' },
     ],
-    shortcut: '/blokklens.svg',
-    apple: '/blokklens.svg',
+    shortcut: '/blokklensLight.svg',
+    apple: '/blokklensLight.svg',
   },
 };
 
@@ -29,7 +30,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/blokklens.svg" type="image/svg+xml" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

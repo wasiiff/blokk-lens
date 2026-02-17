@@ -81,8 +81,8 @@ export const providerType = getActiveProviderType();
 
 export const AI_MODELS = {
   // Latest and Most Powerful Models (Vercel AI Gateway)
-  CLAUDE_SONNET_4: 'anthropic/claude-sonnet-4-20250514',      // Latest Claude - Best reasoning
-  CLAUDE_OPUS_4: 'anthropic/claude-opus-4-20250514',          // Most powerful Claude
+  QWEN_MAX: 'alibaba/qwen3-max',                               // Qwen 3 Max - Best reasoning
+  QWEN_PLUS: 'alibaba/qwen3.5-plus',                           // Qwen 3.5 Plus - Balanced
   GPT4O: 'openai/gpt-4o',                                      // Latest GPT-4 Optimized
   GPT4_TURBO: 'openai/gpt-4-turbo',                           // GPT-4 Turbo
   GEMINI_PRO_2: 'google/gemini-2.0-pro-exp',                  // Latest Gemini Pro
@@ -97,13 +97,13 @@ export const AI_CONFIG = {
   // Use the most powerful model compatible with the active provider
   defaultModel: providerType === 'google'
     ? AI_MODELS.GEMINI_PRO_2
-    : (providerType === 'openai' ? AI_MODELS.GPT4O : AI_MODELS.CLAUDE_SONNET_4),
+    : (providerType === 'openai' ? AI_MODELS.GPT4O : AI_MODELS.QWEN_MAX),
 
   // Fallback models if primary fails
   fallbackModels: [
-    AI_MODELS.GPT4O,           // GPT-4o as first fallback
-    AI_MODELS.GEMINI_PRO_2,    // Gemini Pro as second fallback
-    AI_MODELS.GPT4_TURBO,      // GPT-4 Turbo as third fallback
+    AI_MODELS.QWEN_PLUS,       // Qwen Plus as first fallback
+    AI_MODELS.GPT4O,           // GPT-4o as second fallback
+    AI_MODELS.GEMINI_PRO_2,    // Gemini Pro as third fallback
   ],
 
   // Temperature: 0 = deterministic, 1 = creative
@@ -127,7 +127,7 @@ export const AI_CONFIG = {
  * Get configured AI model instance with fallback support
  * 
  * With AI Gateway, you can use models from multiple providers:
- * - Anthropic: claude-sonnet-4, claude-opus-4 (Best for reasoning)
+ * - Alibaba: qwen3-max, qwen3.5-plus (Best for reasoning and cost-effective)
  * - OpenAI: gpt-4o, gpt-4-turbo (Reliable and fast)
  * - Google: gemini-2.0-pro, gemini-2.0-flash (Good for analysis)
  * 
@@ -197,14 +197,14 @@ export async function getAIModelWithFallback() {
  * Updated for latest models (January 2025)
  */
 export const MODEL_COSTS = {
-  // Anthropic Claude (Best for reasoning)
-  [AI_MODELS.CLAUDE_SONNET_4]: {
-    input: 3.00,   // $3.00 per 1M input tokens
-    output: 15.00, // $15.00 per 1M output tokens
+  // Qwen Models (Best for reasoning)
+  [AI_MODELS.QWEN_MAX]: {
+    input: 2.00,   // $2.00 per 1M input tokens
+    output: 6.00,  // $6.00 per 1M output tokens
   },
-  [AI_MODELS.CLAUDE_OPUS_4]: {
-    input: 15.00,  // $15.00 per 1M input tokens
-    output: 75.00, // $75.00 per 1M output tokens
+  [AI_MODELS.QWEN_PLUS]: {
+    input: 0.50,   // $0.50 per 1M input tokens
+    output: 2.00,  // $2.00 per 1M output tokens
   },
 
   // OpenAI GPT-4 (Reliable and fast)
@@ -261,13 +261,13 @@ export function getRecommendedModel(useCase: 'analysis' | 'chat' | 'prediction' 
   switch (useCase) {
     case 'analysis':
       // Best reasoning for complex analysis
-      return AI_MODELS.CLAUDE_SONNET_4;
+      return AI_MODELS.QWEN_MAX;
     case 'prediction':
       // Good at pattern recognition
-      return AI_MODELS.GPT4O;
+      return AI_MODELS.QWEN_MAX;
     case 'chat':
       // Fast and conversational
-      return AI_MODELS.GEMINI_FLASH_2;
+      return AI_MODELS.QWEN_PLUS;
     case 'fast':
       // Fastest response
       return AI_MODELS.GEMINI_FLASH_2;
@@ -278,7 +278,7 @@ export function getRecommendedModel(useCase: 'analysis' | 'chat' | 'prediction' 
 
 /**
  * System prompts for different use cases
- * Optimized for Claude Sonnet 4 and GPT-4o
+ * Optimized for Qwen Max and GPT-4o
  */
 export const SYSTEM_PROMPTS = {
   TRADING_ASSISTANT: `You are an elite cryptocurrency trading analyst with expertise in technical analysis, quantitative finance, and blockchain technology. You have access to real-time market data and advanced analytical tools.
