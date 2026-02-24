@@ -3,8 +3,11 @@ import { getCoinMarketChart } from '@/services/crypto-service';
 
 // Cache for chart data
 const chartCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 60000; // 1 minute
-const STALE_CACHE_DURATION = 300000; // 5 minutes
+const CACHE_DURATION = 300000; // 5 minutes (increased from 1 minute)
+const STALE_CACHE_DURATION = 900000; // 15 minutes
+
+// Pending requests to prevent duplicate calls
+const pendingRequests = new Map<string, Promise<any>>();
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,20 +25,71 @@ export async function GET(req: NextRequest) {
 
     // Check fresh cache
     if (cached && now - cached.timestamp < CACHE_DURATION) {
+      console.log(`[Chart API] Cache hit for ${cacheKey}`);
       return NextResponse.json(cached.data, {
-        headers: { 'X-Cache': 'HIT' },
+        headers: { 
+          'X-Cache': 'HIT',
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
+        },
       });
     }
 
-    const data = await getCoinMarketChart(coinId, 'usd', days);
+    // Check if there's a pending request
+    if (pendingRequests.has(cacheKey)) {
+      console.log(`[Chart API] Reusing pending request for ${cacheKey}`);
+      const data = await pendingRequests.get(cacheKey);
+      return NextResponse.json(data, {
+        headers: { 
+          'X-Cache': 'PENDING',
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
+        },
+      });
+    }
+
+    // Return stale cache while fetching in background
+    if (cached && now - cached.timestamp < STALE_CACHE_DURATION) {
+      console.log(`[Chart API] Returning stale cache for ${cacheKey}, refreshing in background`);
+      
+      // Fetch in background (don't await)
+      const fetchPromise = getCoinMarketChart(coinId, 'usd', days)
+        .then(data => {
+          chartCache.set(cacheKey, { data, timestamp: Date.now() });
+          return data;
+        })
+        .catch(error => {
+          console.error(`[Chart API] Background refresh error for ${cacheKey}:`, error);
+        })
+        .finally(() => {
+          pendingRequests.delete(cacheKey);
+        });
+      
+      pendingRequests.set(cacheKey, fetchPromise);
+      
+      return NextResponse.json(cached.data, {
+        headers: { 
+          'X-Cache': 'STALE',
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=900',
+        },
+      });
+    }
+
+    // Fetch fresh data
+    const fetchPromise = getCoinMarketChart(coinId, 'usd', days);
+    pendingRequests.set(cacheKey, fetchPromise);
+
+    const data = await fetchPromise;
 
     // Update cache
     chartCache.set(cacheKey, { data, timestamp: now });
+    pendingRequests.delete(cacheKey);
+
+    console.log(`[Chart API] Fetched fresh data for ${cacheKey}`);
 
     return NextResponse.json(data, {
       headers: {
         'X-Cache': 'MISS',
         'X-Data-Source': 'crypto-service',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900',
       },
     });
   } catch (error) {
@@ -49,9 +103,15 @@ export async function GET(req: NextRequest) {
     const cached = chartCache.get(cacheKey);
     const now = Date.now();
 
+    pendingRequests.delete(cacheKey);
+
     if (cached && now - cached.timestamp < STALE_CACHE_DURATION) {
+      console.log(`[Chart API] Error occurred, using stale cache for ${cacheKey}`);
       return NextResponse.json(cached.data, {
-        headers: { 'X-Cache': 'STALE' },
+        headers: { 
+          'X-Cache': 'ERROR-STALE',
+          'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=900',
+        },
       });
     }
 
