@@ -39,9 +39,10 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
   const { data: coin, isLoading } = useQuery({
     queryKey: ["coin", coinId],
     queryFn: () => fetchCoinDetails(coinId),
-    staleTime: 60000, // 1 minute
+    staleTime: 30000, // 30 seconds - more frequent updates for live data
     gcTime: 300000, // 5 minutes cache
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchInterval: 60000, // Auto-refetch every 60 seconds for live updates
   })
 
   const { data: favorites } = useQuery({
@@ -139,6 +140,47 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
     [coin]
   )
 
+  const volume24h = useMemo(() => 
+    ((coin?.market_data?.total_volume?.usd ?? 0) / 1e9).toFixed(2),
+    [coin]
+  )
+
+  const volumeToMarketCapRatio = useMemo(() => {
+    const volume = coin?.market_data?.total_volume?.usd ?? 0
+    const marketCap = coin?.market_data?.market_cap?.usd ?? 1
+    return ((volume / marketCap) * 100).toFixed(2)
+  }, [coin])
+
+  const priceChange7d = useMemo(() => 
+    coin?.market_data?.price_change_percentage_7d ?? 0,
+    [coin]
+  )
+
+  const priceChange30d = useMemo(() => 
+    coin?.market_data?.price_change_percentage_30d ?? 0,
+    [coin]
+  )
+
+  const priceChange1y = useMemo(() => 
+    coin?.market_data?.price_change_percentage_1y ?? 0,
+    [coin]
+  )
+
+  const athChange = useMemo(() => 
+    coin?.market_data?.ath_change_percentage?.usd ?? 0,
+    [coin]
+  )
+
+  const marketCapChange24h = useMemo(() => 
+    coin?.market_data?.market_cap_change_percentage_24h ?? 0,
+    [coin]
+  )
+
+  const fullyDilutedValuation = useMemo(() => 
+    ((coin?.market_data?.fully_diluted_valuation?.usd ?? 0) / 1e9).toFixed(2),
+    [coin]
+  )
+
   const high24h = useMemo(() => 
     (coin?.market_data?.high_24h?.usd ?? 0).toLocaleString(),
     [coin]
@@ -205,7 +247,7 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                   loading="lazy"
                 />
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-2xl sm:text-3xl card-text mb-1 break-words">
+                  <CardTitle className="text-2xl sm:text-3xl card-text mb-1 wrap-break-word">
                     {coin.name}
                   </CardTitle>
                   <p className="card-text-muted uppercase text-sm">
@@ -336,7 +378,7 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                   className="flex items-center justify-between p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <span className="card-text text-sm sm:text-base">Website</span>
-                  <ExternalLink className="w-4 h-4 card-text-muted flex-shrink-0" />
+                  <ExternalLink className="w-4 h-4 card-text-muted shrink-0" />
                 </a>
               )}
               {coin.links?.blockchain_site?.[0] && (
@@ -347,7 +389,7 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                   className="flex items-center justify-between p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <span className="card-text text-sm sm:text-base">Explorer</span>
-                  <ExternalLink className="w-4 h-4 card-text-muted flex-shrink-0" />
+                  <ExternalLink className="w-4 h-4 card-text-muted shrink-0" />
                 </a>
               )}
             </CardContent>
@@ -355,7 +397,13 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
 
           <Card className="glass-card-light border border-border">
             <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="card-text text-lg sm:text-xl">Market Stats</CardTitle>
+              <CardTitle className="card-text text-lg sm:text-xl flex items-center justify-between">
+                <span>Market Stats</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-xs text-muted-foreground font-normal">Live</span>
+                </div>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
               <div className="flex justify-between items-center gap-2">
@@ -371,11 +419,120 @@ const CoinDetailClient = memo(function CoinDetailClient({ coinId }: CoinDetailCl
                 </span>
               </div>
               <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">24h Volume</span>
+                <span className="card-text font-medium text-sm sm:text-base break-all text-right">
+                  ${volume24h}B
+                </span>
+              </div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">Vol/MCap Ratio</span>
+                <span className="card-text font-medium text-sm sm:text-base break-all text-right">
+                  {volumeToMarketCapRatio}%
+                </span>
+              </div>
+              <div className="flex justify-between items-center gap-2">
                 <span className="card-text-muted text-xs sm:text-sm">All-Time High</span>
                 <span className="card-text font-medium text-sm sm:text-base break-all text-right">
                   ${ath}
                 </span>
               </div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">From ATH</span>
+                <span className={`font-medium text-sm sm:text-base break-all text-right ${
+                  athChange >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {athChange.toFixed(2)}%
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card-light border border-border">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="card-text text-lg sm:text-xl">Price Performance</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">24 Hours</span>
+                <div className={`flex items-center gap-1 font-medium text-sm sm:text-base ${
+                  priceChange >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {priceChange >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(priceChange).toFixed(2)}%
+                </div>
+              </div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">7 Days</span>
+                <div className={`flex items-center gap-1 font-medium text-sm sm:text-base ${
+                  priceChange7d >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {priceChange7d >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(priceChange7d).toFixed(2)}%
+                </div>
+              </div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">30 Days</span>
+                <div className={`flex items-center gap-1 font-medium text-sm sm:text-base ${
+                  priceChange30d >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {priceChange30d >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(priceChange30d).toFixed(2)}%
+                </div>
+              </div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">1 Year</span>
+                <div className={`flex items-center gap-1 font-medium text-sm sm:text-base ${
+                  priceChange1y >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {priceChange1y >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(priceChange1y).toFixed(2)}%
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card-light border border-border">
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="card-text text-lg sm:text-xl">Supply & Valuation</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">Market Cap</span>
+                <span className="card-text font-medium text-sm sm:text-base break-all text-right">
+                  ${marketCap}B
+                </span>
+              </div>
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">MCap Change 24h</span>
+                <div className={`flex items-center gap-1 font-medium text-sm sm:text-base ${
+                  marketCapChange24h >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {marketCapChange24h >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  {Math.abs(marketCapChange24h).toFixed(2)}%
+                </div>
+              </div>
+              {fullyDilutedValuation !== '0.00' && (
+                <div className="flex justify-between items-center gap-2">
+                  <span className="card-text-muted text-xs sm:text-sm">Fully Diluted Val.</span>
+                  <span className="card-text font-medium text-sm sm:text-base break-all text-right">
+                    ${fullyDilutedValuation}B
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center gap-2">
+                <span className="card-text-muted text-xs sm:text-sm">Circulating Supply</span>
+                <span className="card-text font-medium text-sm sm:text-base break-all text-right">
+                  {circulatingSupply}
+                </span>
+              </div>
+              {totalSupply && (
+                <div className="flex justify-between items-center gap-2">
+                  <span className="card-text-muted text-xs sm:text-sm">Total Supply</span>
+                  <span className="card-text font-medium text-sm sm:text-base break-all text-right">
+                    {totalSupply}
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
