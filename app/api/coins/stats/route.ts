@@ -7,8 +7,8 @@ let statsCache: {
   timestamp: number;
 } | null = null;
 
-const CACHE_DURATION = 180000; // 3 minutes
-const MAX_PAGES_TO_FETCH = 40; // Fetch 10,000 coins (40 pages * 250 coins)
+const CACHE_DURATION = 300000; // 5 minutes (increased from 3)
+const MAX_PAGES_TO_FETCH = 4; // Only fetch 1,000 coins (4 pages * 250 coins) - enough for accurate stats
 
 interface CoinData {
   id: string;
@@ -22,28 +22,22 @@ interface CoinData {
 
 // Fetch coins in batches to avoid rate limits
 async function fetchAllCoins(maxPages: number): Promise<CoinData[]> {
-  const BATCH_SIZE = 5; // Fetch 5 pages at a time
   const allCoins: CoinData[] = [];
   
-  for (let i = 0; i < maxPages; i += BATCH_SIZE) {
-    const batchPromises = [];
-    const batchEnd = Math.min(i + BATCH_SIZE, maxPages);
-    
-    for (let page = i + 1; page <= batchEnd; page++) {
-      batchPromises.push(
-        getMarketCoins({ page, per_page: 250 }).catch(err => {
-          console.error(`[Stats API] Error fetching page ${page}:`, err);
-          return [];
-        })
-      );
-    }
-    
-    const batchResults = await Promise.all(batchPromises);
-    batchResults.forEach(coins => allCoins.push(...coins));
-    
-    // Small delay between batches to respect rate limits
-    if (batchEnd < maxPages) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+  // Fetch pages sequentially with delay to respect rate limits
+  for (let page = 1; page <= maxPages; page++) {
+    try {
+      const coins = await getMarketCoins({ page, per_page: 250 });
+      allCoins.push(...coins);
+      
+      // Delay between requests to respect rate limits (free tier: ~10-30 calls/min)
+      if (page < maxPages) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
+      }
+    } catch (err) {
+      console.error(`[Stats API] Error fetching page ${page}:`, err);
+      // Continue with what we have
+      break;
     }
   }
   
@@ -71,16 +65,13 @@ export async function GET() {
     // Fetch global data first
     const globalData = await getGlobalData();
     
-    // Determine how many pages to fetch based on active cryptocurrencies
-    const activeCryptos = globalData?.data?.active_cryptocurrencies || 10000;
-    const pagesToFetch = Math.min(
-      Math.ceil(activeCryptos / 250),
-      MAX_PAGES_TO_FETCH
-    );
+    // Determine how many pages to fetch (limit to top coins for stats)
+    // Top 1,000 coins by market cap are sufficient for accurate market stats
+    const pagesToFetch = Math.min(MAX_PAGES_TO_FETCH, 4);
     
-    console.log(`[Stats API] Fetching ${pagesToFetch} pages (${pagesToFetch * 250} coins max)`);
+    console.log(`[Stats API] Fetching ${pagesToFetch} pages (~${pagesToFetch * 250} top coins for stats)`);
     
-    // Fetch all coins
+    // Fetch top coins only
     const allCoins = await fetchAllCoins(pagesToFetch);
     
     console.log(`[Stats API] Fetched ${allCoins.length} coins in ${Date.now() - startTime}ms`);
