@@ -410,7 +410,7 @@ function TradingAssistantRedesigned({
             className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => router.push('/')}
           >
-            <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center p-1">
+            <div className="w-6 h-6 flex items-center justify-center">
               <Logo size="sm" className="w-full h-full text-primary" />
             </div>
             <div>
@@ -667,7 +667,7 @@ function TradingAssistantRedesigned({
                 className="flex flex-col items-center justify-center min-h-[calc(100vh-240px)]"
               >
                 <motion.div variants={itemVariants} className="text-center mb-6">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
+                  <div className="inline-flex items-center justify-center w-12 h-12 mb-4">
                     <Logo size="lg" className="w-8 h-8 text-primary" />
                   </div>
                   <h1 className="text-3xl md:text-4xl font-bold mb-3">
@@ -739,7 +739,7 @@ function TradingAssistantRedesigned({
                       {message.role === 'assistant' ? (
                         <>
                           <div className="flex items-center gap-3 mb-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center p-1.5">
+                            <div className="w-8 h-8 flex items-center justify-center">
                               <Logo size="sm" className="w-full h-full text-primary" />
                             </div>
                             <span className="text-sm font-medium">BlokkLens AI</span>
@@ -786,7 +786,7 @@ function TradingAssistantRedesigned({
                         <div className="flex flex-col items-end">
                           <div className="flex items-center gap-3 mb-3">
                             <span className="text-sm font-medium">{session?.user?.name || 'You'}</span>
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <div className="w-8 h-8 flex items-center justify-center">
                               <User className="w-4 h-4 text-primary" />
                             </div>
                           </div>
@@ -807,7 +807,7 @@ function TradingAssistantRedesigned({
                     className="mb-8"
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center p-1.5 animate-pulse">
+                      <div className="w-8 h-8 flex items-center justify-center animate-pulse">
                         <Logo size="sm" className="w-full h-full text-primary" />
                       </div>
                       <span className="text-sm font-medium">BlokkLens AI</span>
