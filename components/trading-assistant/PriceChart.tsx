@@ -78,7 +78,13 @@ export default function PriceChart({ coinId, days: initialDays = 30 }: PriceChar
           return dataPoint;
         });
 
-        setChartData(formattedData);
+        // Decimate data for MAX period to keep chart performant (max ~500 points)
+        const MAX_POINTS = 500;
+        const decimated = formattedData.length > MAX_POINTS
+          ? formattedData.filter((_, i) => i % Math.ceil(formattedData.length / MAX_POINTS) === 0)
+          : formattedData;
+
+        setChartData(decimated);
         setIndicators(analysis);
       } catch (error) {
         console.error('Error fetching chart data:', error);

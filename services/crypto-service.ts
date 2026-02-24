@@ -514,7 +514,7 @@ export async function getCoinOHLC(
 export async function getCoinMarketChart(
   coinId: string,
   vs_currency: string = "usd",
-  days: number = 30
+  days: number | string = 30
 ) {
   // Try CoinGecko first
   try {
@@ -528,7 +528,8 @@ export async function getCoinMarketChart(
     try {
       const symbol = Binance.getBinanceSymbol(coinId);
       if (symbol) {
-        const { interval, limit } = calculateBinanceParams(days);
+        const numericDays = days === 'max' ? 1825 : (typeof days === 'string' ? parseInt(days, 10) : days);
+        const { interval, limit } = calculateBinanceParams(numericDays);
         const klines = await withTimeout(Binance.getKlines(symbol, interval, limit), 5000);
 
         // Convert Binance kline format to CoinGecko market_chart format

@@ -118,7 +118,7 @@ export async function searchCoins(query: string) {
 export async function getCoinMarketChart(
     id: string,
     vs_currency: string = 'usd',
-    days: number = 30
+    days: number | string = 30
 ) {
     return fetcher(
         `${ACTIVE_BASE_URL}/coins/${id}/market_chart?vs_currency=${vs_currency}&days=${days}`

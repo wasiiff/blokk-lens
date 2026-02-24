@@ -13,7 +13,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const coinId = searchParams.get('coinId');
-    const days = parseInt(searchParams.get('days') || '30', 10);
+    const daysParam = searchParams.get('days') || '30';
+    const days = daysParam === 'max' ? 'max' : parseInt(daysParam, 10);
 
     if (!coinId) {
       return NextResponse.json({ error: 'Coin ID is required' }, { status: 400 });
@@ -78,6 +79,10 @@ export async function GET(req: NextRequest) {
     pendingRequests.set(cacheKey, fetchPromise);
 
     const data = await fetchPromise;
+
+    if (!data || !data.prices || data.prices.length === 0) {
+      throw new Error('No chart data returned');
+    }
 
     // Update cache
     chartCache.set(cacheKey, { data, timestamp: now });
