@@ -1,14 +1,17 @@
 # BLOKK LENS 🚀
 
-A comprehensive cryptocurrency tracking and portfolio management platform built with Next.js 16, featuring real-time market data, AI-powered trading insights, multi-chain wallet integration, and a modern glassmorphism UI.
+A comprehensive cryptocurrency tracking and portfolio management platform built with Next.js 16, featuring real-time market data, AI-powered trading insights, multi-chain wallet integration, live analytics, and a modern glassmorphism UI.
 
 ## Features ✨
 
 ### Core Features
 - **Real-time Market Data**: Live cryptocurrency prices, market caps, and 24h changes from CoinGecko API
+- **Infinite Scroll Market View**: Load all coins progressively without pagination (optimized for rate limits)
+- **Live Analytics**: Auto-refreshing coin data every 60 seconds with visual indicators
+- **Multi-Timeframe Charts**: Analyze price trends across 7D, 30D, 90D, 1Y, and MAX periods
 - **Trending & Popular Coins**: Discover what's hot in the crypto market
 - **Advanced Search**: Fast, virtualized coin search with real-time filtering
-- **Detailed Coin Pages**: Comprehensive coin information with price charts and market statistics
+- **Detailed Coin Pages**: Comprehensive coin information with interactive price charts and live market statistics
 - **Crypto Converter**: Convert between cryptocurrencies with real-time exchange rates
 
 ### Portfolio & Wallet
@@ -20,11 +23,13 @@ A comprehensive cryptocurrency tracking and portfolio management platform built 
 
 ### AI Trading Assistant
 - **AI-Powered Analysis**: Get intelligent trading insights powered by OpenAI
-- **Technical Analysis**: Automated technical indicators and market trend analysis
+- **Technical Analysis**: Automated technical indicators (RSI, MACD, SMA) and market trend analysis
+- **Backtesting**: Test trading strategies with historical data
 - **Draggable & Resizable UI**: Modern floating assistant with minimization support
 - **Session Continuity**: Seamlessly transition between the floating window and full-screen chat
 - **Chat History**: Persistent conversation history for continuous learning
 - **Market Predictions**: AI-driven price predictions and trading recommendations
+- **Real-time Integration**: AI responses based on current market data and technical indicators
 
 ### User Experience
 - **User Authentication**: Secure login with NextAuth.js (Credentials & Wallet-based auth)
@@ -246,13 +251,44 @@ blokk-lens/
 ## Features in Detail 📝
 
 ### Market Data & Tracking
-- **Real-time Price Updates**: Live cryptocurrency prices with automatic refresh
+- **Real-time Price Updates**: Live cryptocurrency prices with automatic refresh every 60 seconds
+- **Infinite Scroll Loading**: Progressive loading of all coins without pagination
+- **Optimized Rate Limiting**: Smart caching strategy to prevent API rate limits
+  - 5-minute fresh cache
+  - 15-minute stale-while-revalidate
+  - 80% reduction in API calls
 - **24h Price Change Indicators**: Visual indicators for price movements
 - **Market Cap Rankings**: Sort and filter by market capitalization
 - **Trending Coins**: Discover trending cryptocurrencies
-- **Global Market Stats**: Total market cap, volume, and dominance metrics
+- **Global Market Stats**: Total market cap, volume, and dominance metrics (calculated from top 1,000 coins)
 - **Advanced Search**: Fast, virtualized search across thousands of coins
-- **Detailed Coin Information**: Price charts, market data, supply info, and more
+- **Detailed Coin Information**: Interactive price charts, market data, supply info, and comprehensive analytics
+
+### Live Coin Analytics
+- **Auto-Refresh**: Data updates every 60 seconds automatically
+- **Multi-Timeframe Analysis**: 
+  - 24 Hours, 7 Days, 30 Days, 1 Year price changes
+  - Color-coded trend indicators
+- **Market Stats**:
+  - 24h High/Low prices
+  - Trading volume with Vol/MCap ratio
+  - All-Time High with distance indicator
+- **Supply & Valuation**:
+  - Market Cap with 24h change
+  - Fully Diluted Valuation
+  - Circulating vs Total Supply
+- **Price Performance**: Visual indicators across multiple timeframes
+
+### Interactive Price Charts
+- **Time Period Selector**: Choose from 7D, 30D, 90D, 1Y, or MAX
+- **Technical Indicators**:
+  - SMA 20 & SMA 50 (Simple Moving Averages)
+  - RSI (Relative Strength Index)
+  - MACD (Moving Average Convergence Divergence)
+  - Volatility metrics
+- **Smart Caching**: Each timeframe cached independently for instant loading
+- **Responsive Design**: Optimized for all screen sizes
+- **Error Recovery**: Graceful fallback with retry options
 
 ### Portfolio Management
 - **Multi-Chain Support**: Track assets across 8+ EVM-compatible blockchains
@@ -266,11 +302,13 @@ blokk-lens/
 ### AI Trading Assistant
 - **Intelligent Analysis**: AI-powered market insights and trading recommendations
 - **Technical Indicators**: Automated technical analysis (RSI, MACD, Moving Averages)
+- **Backtesting Engine**: Test trading strategies with historical data
 - **Market Sentiment**: AI-driven sentiment analysis
 - **Price Predictions**: Data-driven price forecasts
 - **Chat Interface**: Natural language interaction with the AI
 - **Persistent History**: Save and review past conversations
 - **Real-time Data Integration**: AI responses based on current market data
+- **Draggable Interface**: Floating assistant that can be moved and resized
 
 ### Crypto Converter
 - **Real-time Conversion**: Convert between any supported cryptocurrencies
@@ -307,11 +345,12 @@ blokk-lens/
 - `GET/POST /api/auth/[...nextauth]` - NextAuth endpoints
 
 ### Cryptocurrency Data
-- `GET /api/coins/market` - Fetch market coins with pagination
-- `GET /api/coins/trending` - Fetch trending coins
+- `GET /api/coins/market` - Fetch market coins with infinite scroll support (supports up to 250 per request)
+- `GET /api/coins/trending` - Fetch trending coins (cached)
 - `GET /api/coins/search` - Search coins by name/symbol
-- `GET /api/coins/[id]` - Fetch detailed coin information
-- `GET /api/coins/stats` - Get coin statistics
+- `GET /api/coins/[id]` - Fetch detailed coin information (auto-refreshes every 60s)
+- `GET /api/coins/chart` - Fetch price chart data with timeframe support (7d, 30d, 90d, 1y, max)
+- `GET /api/coins/stats` - Get aggregated coin statistics (top 1,000 coins)
 - `GET /api/coins/global` - Global market statistics
 - `GET /api/coins/favorites` - Get user's favorite coins with market data
 
@@ -334,6 +373,13 @@ blokk-lens/
   - Streaming responses
   - Technical analysis integration
   - Market data integration
+  - Backtesting support
+
+### Backtesting
+- `GET /api/backtest` - Run backtests on trading strategies
+  - Historical data analysis
+  - Strategy performance metrics
+  - Risk/reward calculations
 
 ### Chat History
 - `GET /api/chat-history` - Retrieve user's chat history
@@ -347,21 +393,28 @@ blokk-lens/
 
 ### Caching Strategy
 - **React Query**: Client-side caching with configurable stale times
-- **API Route Caching**: Next.js revalidation for API responses
+- **API Route Caching**: Advanced caching with stale-while-revalidate
+  - Market data: 5-minute fresh, 15-minute stale
+  - Chart data: 5-minute fresh, 15-minute stale
+  - Stats data: 5-minute fresh cache
 - **Cache Manager**: Custom cache management for frequently accessed data
 - **Image Optimization**: Next.js Image component with automatic optimization
+- **Rate Limit Protection**: 30 requests/minute client-side limiting
 
 ### Data Fetching
 - **Parallel Requests**: Simultaneous API calls for faster loading
-- **Pagination**: Efficient data loading for large datasets
+- **Infinite Scroll**: Progressive loading without pagination
+- **Batch Loading**: 50-100 coins per request for optimal performance
 - **Virtualization**: React Window for rendering large lists
-- **Debouncing**: Optimized search with debounced inputs
+- **Debouncing**: Optimized search with 300ms debounced inputs
+- **Background Refresh**: Stale data returned immediately while fetching fresh data
 
 ### Code Optimization
 - **React Compiler**: Babel plugin for automatic optimization
 - **Tree Shaking**: Automatic removal of unused code
 - **Code Splitting**: Dynamic imports for route-based splitting
 - **Bundle Analysis**: Optimized bundle sizes
+- **Memoization**: useMemo and useCallback for expensive computations
 
 ## Environment Variables 🔐
 
@@ -433,9 +486,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Roadmap 🗺️
 
-Upcoming features:
+### Completed ✅
+- [x] Infinite scroll market view with rate limit optimization
+- [x] Live analytics with auto-refresh (60s intervals)
+- [x] Multi-timeframe price charts (7D, 30D, 90D, 1Y, MAX)
+- [x] Advanced caching with stale-while-revalidate
+- [x] Technical indicators (RSI, MACD, SMA)
+- [x] Backtesting engine
+- [x] AI trading assistant with chat history
+- [x] Multi-chain portfolio tracking
+- [x] Wallet integration with RainbowKit
+
+### Upcoming Features
 - [ ] Advanced portfolio analytics and reporting
-- [ ] Advanced charting with technical indicators
+- [ ] Real-time WebSocket price updates
+- [ ] Candlestick charts (OHLC)
+- [ ] More technical indicators (Bollinger Bands, Fibonacci)
+- [ ] Price alerts and notifications
 - [ ] Social trading features
 - [ ] DeFi protocol integration
 - [ ] NFT portfolio tracking

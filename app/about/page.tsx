@@ -15,7 +15,7 @@ export default function AboutPage() {
     { name: "AI Trading Assistant", description: "Get intelligent trading suggestions powered by AI. Our bot analyzes market trends and provides personalized recommendations.", icon: Bot, status: "Live" },
     { name: "Smart Watchlist", description: "Save and monitor your favorite cryptocurrencies with personalized insights and real-time data.", icon: Sparkles, status: "Live" },
     { name: "Lightning Fast", description: "Built with Next.js 14 for optimal performance, instant page loads, and seamless user experience.", icon: Zap, status: "Live" },
-    { name: "Coin-Specific AI Analysis", description: "Deep dive into individual cryptocurrencies with AI-powered technical analysis, price predictions, and trading signals tailored to each coin.", icon: Target, status: "Coming Soon" },
+    { name: "Coin-Specific AI Analysis", description: "Deep dive into individual cryptocurrencies with AI-powered technical analysis, price predictions, and trading signals tailored to each coin.", icon: Target, status: "Live" },
     { name: "Launch Your Coin", description: "Create and launch your own cryptocurrency with our easy-to-use platform. No technical knowledge required.", icon: Rocket, status: "Coming Soon" },
   ]
 

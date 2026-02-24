@@ -7,25 +7,10 @@ import CoinCard from "./CoinCard"
 import { CoinCardSkeleton } from "@/components/ui/skeleton"
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Filter } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Loader2, ChevronDown } from "lucide-react"
 
-const ITEMS_PER_PAGE = 20
-// CoinGecko has 13,690+ coins, but API limits to 250 per page and ~10,000 total accessible via pagination
-// We'll calculate total pages dynamically from global data
+const COINS_PER_LOAD = 100 // Load 100 coins at a time
 const MAX_COINS_ACCESSIBLE = 10000 // CoinGecko API limitation
-const DEFAULT_TOTAL_PAGES = Math.ceil(MAX_COINS_ACCESSIBLE / ITEMS_PER_PAGE) // 500 pages
-
-const CHAIN_FILTERS = [
-  { id: "all", name: "All Chains", icon: "🌐", keywords: [] },
-  { id: "ethereum", name: "Ethereum", icon: "Ξ", keywords: ["ethereum", "eth"] },
-  { id: "bsc", name: "BSC", icon: "🟡", keywords: ["binance", "bsc", "bnb"] },
-  { id: "polygon", name: "Polygon", icon: "🟣", keywords: ["polygon", "matic"] },
-  { id: "arbitrum", name: "Arbitrum", icon: "🔵", keywords: ["arbitrum", "arb"] },
-  { id: "optimism", name: "Optimism", icon: "🔴", keywords: ["optimism", "op"] },
-  { id: "avalanche", name: "Avalanche", icon: "🔺", keywords: ["avalanche", "avax"] },
-  { id: "solana", name: "Solana", icon: "◎", keywords: ["solana", "sol"] },
-]
 
 interface MarketOverviewProps {
   searchQuery?: string
@@ -35,17 +20,10 @@ export default function MarketOverview({ searchQuery = "" }: MarketOverviewProps
   const { data: session } = useSession()
   const queryClient = useQueryClient()
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(DEFAULT_TOTAL_PAGES)
-  // const [selectedChain, setSelectedChain] = useState("all") // Commented out for future use
+  const [loadedPages, setLoadedPages] = useState(1) // Track how many pages loaded
+  const [allCoins, setAllCoins] = useState<any[]>([]) // Store all loaded coins
 
   const isSearching = searchQuery.trim().length > 0
-  // const isFiltering = selectedChain !== "all" // Commented out for future use
-
-  // Reset to first page when search query changes
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchQuery])
 
   // Fetch global data to get total coin count
   const { data: globalData } = useQuery({
@@ -53,66 +31,39 @@ export default function MarketOverview({ searchQuery = "" }: MarketOverviewProps
     queryFn: fetchGlobalMarketData,
   })
 
-  // Calculate total pages based on active cryptocurrencies
-  useEffect(() => {
-    if (globalData?.data?.active_cryptocurrencies) {
-      const activeCryptos = globalData.data.active_cryptocurrencies
-      // CoinGecko API limits to ~10,000 coins accessible via pagination
-      const accessibleCoins = Math.min(activeCryptos, MAX_COINS_ACCESSIBLE)
-      const calculatedPages = Math.ceil(accessibleCoins / ITEMS_PER_PAGE)
-      setTotalPages(calculatedPages)
-    }
-  }, [globalData])
+  // Calculate total available coins
+  const totalAvailableCoins = Math.min(
+    globalData?.data?.active_cryptocurrencies || MAX_COINS_ACCESSIBLE,
+    MAX_COINS_ACCESSIBLE
+  )
 
-  // Fetch regular market coins for browsing
-  const { data: marketCoins, isLoading: marketCoinsLoading } = useQuery({
-    queryKey: ["market-coins", currentPage, ITEMS_PER_PAGE],
-    queryFn: () => fetchMarketCoins(currentPage, ITEMS_PER_PAGE),
-    enabled: !isSearching,
+  // Fetch market coins for current page
+  const { data: currentPageCoins, isLoading: isLoadingPage, isFetching } = useQuery({
+    queryKey: ["market-coins-page", loadedPages],
+    queryFn: () => fetchMarketCoins(loadedPages, COINS_PER_LOAD),
+    enabled: !isSearching && loadedPages > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   })
 
-  // Chain filtering logic - Commented out for future use
-  // const filteredCoins = useMemo(() => {
-  //   if (!marketCoins || selectedChain === "all") return marketCoins
-  //   
-  //   const selectedFilter = CHAIN_FILTERS.find(f => f.id === selectedChain)
-  //   if (!selectedFilter || selectedFilter.keywords.length === 0) return marketCoins
-  //
-  //   return marketCoins.filter(coin => {
-  //     const coinName = coin.name.toLowerCase()
-  //     const coinSymbol = coin.symbol.toLowerCase()
-  //     const coinId = coin.id.toLowerCase()
-  //     
-  //     return selectedFilter.keywords.some(keyword => {
-  //       const keywordLower = keyword.toLowerCase()
-  //       
-  //       if (coinSymbol === keywordLower || coinSymbol.startsWith(keywordLower)) return true
-  //       if (coinName === keywordLower || coinName.startsWith(keywordLower)) return true
-  //       if (coinId === keywordLower || coinId.startsWith(keywordLower)) return true
-  //       
-  //       const nameWords = coinName.split(/[\s-_]+/)
-  //       const symbolWords = coinSymbol.split(/[\s-_]+/)
-  //       const idWords = coinId.split(/[\s-_]+/)
-  //       
-  //       return nameWords.some(word => word === keywordLower || word.startsWith(keywordLower)) ||
-  //              symbolWords.some(word => word === keywordLower || word.startsWith(keywordLower)) ||
-  //              idWords.some(word => word === keywordLower || word.startsWith(keywordLower))
-  //     })
-  //   })
-  // }, [marketCoins, selectedChain])
+  // Add newly loaded coins to the collection
+  useEffect(() => {
+    if (currentPageCoins && Array.isArray(currentPageCoins) && currentPageCoins.length > 0) {
+      setAllCoins(prev => {
+        // Avoid duplicates by checking IDs
+        const existingIds = new Set(prev.map(coin => coin.id))
+        const newCoins = currentPageCoins.filter(coin => !existingIds.has(coin.id))
+        return [...prev, ...newCoins]
+      })
+    }
+  }, [currentPageCoins])
 
-  // const paginatedFilteredCoins = useMemo(() => {
-  //   if (!isFiltering || !filteredCoins) return filteredCoins
-  //   
-  //   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-  //   const endIndex = startIndex + ITEMS_PER_PAGE
-  //   return filteredCoins.slice(startIndex, endIndex)
-  // }, [filteredCoins, currentPage, isFiltering])
-
-  // const totalFilteredPages = useMemo(() => {
-  //   if (!isFiltering || !filteredCoins) return TOTAL_PAGES
-  //   return Math.ceil(filteredCoins.length / ITEMS_PER_PAGE)
-  // }, [filteredCoins, isFiltering])
+  // Reset when search query changes
+  useEffect(() => {
+    if (!isSearching) {
+      setLoadedPages(1)
+      setAllCoins([])
+    }
+  }, [searchQuery, isSearching])
 
   // Fetch search results
   const { data: searchResults, isLoading: searchLoading } = useQuery({
@@ -132,20 +83,18 @@ export default function MarketOverview({ searchQuery = "" }: MarketOverviewProps
       if (searchCoinIds.length === 0) return []
       
       // Fetch market data for all search result coins
-      // We'll fetch a large batch and filter by the search result IDs
       const allCoins = await fetchMarketCoins(1, 250)
       return allCoins.filter(coin => searchCoinIds.includes(coin.id))
     },
     enabled: isSearching && searchCoinIds.length > 0,
   })
 
-  const coins = isSearching ? searchCoinsData : marketCoins
-  const isLoading = isSearching ? (searchLoading || searchCoinsDataLoading) : marketCoinsLoading
-  const displayTotalPages = totalPages // isFiltering ? totalFilteredPages : totalPages
+  const coins = isSearching ? (searchCoinsData || []) : allCoins
+  const isLoading = isSearching ? (searchLoading || searchCoinsDataLoading) : (isLoadingPage && allCoins.length === 0)
   
-  // Calculate total coins accessible
-  const totalCoinsAccessible = totalPages * ITEMS_PER_PAGE
-  const actualTotalCoins = globalData?.data?.active_cryptocurrencies || totalCoinsAccessible
+  // Calculate if more coins can be loaded
+  const canLoadMore = allCoins.length < totalAvailableCoins && !isSearching
+  const totalCoinsLoaded = allCoins.length
 
   const { data: favorites } = useQuery({
     queryKey: ["favorites"],
@@ -189,54 +138,11 @@ export default function MarketOverview({ searchQuery = "" }: MarketOverviewProps
     }
   }, [favoriteIds, addMutation, removeMutation])
 
-  const handlePreviousPage = useCallback(() => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1))
-  }, [])
-
-  const handleNextPage = useCallback(() => {
-    setCurrentPage((prev) => Math.min(prev + 1, displayTotalPages))
-  }, [displayTotalPages])
-
-  const handlePageClick = useCallback((page: number) => {
-    setCurrentPage(page)
-  }, [])
-
-  // Generate page numbers to display
-  const getPageNumbers = useCallback(() => {
-    const pages: (number | string)[] = []
-    const maxPagesToShow = 5
-    const totalPages = displayTotalPages
-    
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i)
-        }
-        pages.push('...')
-        pages.push(totalPages)
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1)
-        pages.push('...')
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i)
-        }
-      } else {
-        pages.push(1)
-        pages.push('...')
-        pages.push(currentPage - 1)
-        pages.push(currentPage)
-        pages.push(currentPage + 1)
-        pages.push('...')
-        pages.push(totalPages)
-      }
+  const handleLoadMore = useCallback(() => {
+    if (canLoadMore && !isFetching) {
+      setLoadedPages(prev => prev + 1)
     }
-    
-    return pages
-  }, [currentPage, displayTotalPages])
+  }, [canLoadMore, isFetching])
 
   if (isLoading) {
     return (
@@ -250,40 +156,6 @@ export default function MarketOverview({ searchQuery = "" }: MarketOverviewProps
 
   return (
     <div className="space-y-6">
-      {/* Chain Filter - Commented out for future implementation */}
-      {/* <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-semibold text-muted-foreground">Filter by Chain</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {CHAIN_FILTERS.map((chain) => (
-            <Button
-              key={chain.id}
-              variant={selectedChain === chain.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedChain(chain.id)}
-              className={
-                selectedChain === chain.id
-                  ? "h-9 px-4 rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-semibold border-0 transition-all duration-200 hover:scale-105"
-                  : "h-9 px-4 rounded-full border-2 border-border/50 bg-background/60 backdrop-blur-md hover:bg-primary/10 hover:border-primary/50 hover:scale-105 transition-all duration-200 font-medium"
-              }
-            >
-              <span className="text-base mr-1.5">{chain.icon}</span>
-              <span className="text-sm">{chain.name}</span>
-            </Button>
-          ))}
-        </div>
-        {selectedChain !== "all" && filteredCoins && (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 backdrop-blur-md border border-primary/20">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-sm font-semibold text-foreground">
-              Found {filteredCoins.length} {CHAIN_FILTERS.find(f => f.id === selectedChain)?.name} coins
-            </span>
-          </div>
-        )}
-      </div> */}
-
       {/* Coins Grid */}
       {!coins || coins.length === 0 ? (
         <div className="text-center py-12">
@@ -293,11 +165,18 @@ export default function MarketOverview({ searchQuery = "" }: MarketOverviewProps
         </div>
       ) : (
         <>
-          {/* Show search results count */}
-          {isSearching && (
+          {/* Show search results count or loaded coins count */}
+          {isSearching ? (
             <div className="mb-4">
               <p className="text-sm text-muted-foreground">
                 Found {coins.length} coin{coins.length !== 1 ? 's' : ''} matching "{searchQuery}"
+              </p>
+            </div>
+          ) : (
+            <div className="mb-4 flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-muted/40 backdrop-blur-md border-2 border-border/30 shadow-lg w-fit">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-lg shadow-primary/50" />
+              <p className="text-sm font-semibold text-muted-foreground">
+                Showing <span className="text-foreground font-bold text-base">{totalCoinsLoaded.toLocaleString()}</span> of <span className="text-foreground font-bold text-base">{totalAvailableCoins.toLocaleString()}</span> coins
               </p>
             </div>
           )}
@@ -312,105 +191,40 @@ export default function MarketOverview({ searchQuery = "" }: MarketOverviewProps
               />
             ))}
           </div>
+
+          {/* Load More Button - Only show when not searching */}
+          {!isSearching && (
+            <div className="flex justify-center items-center py-8">
+              {canLoadMore ? (
+                <Button
+                  onClick={handleLoadMore}
+                  disabled={isFetching}
+                  size="lg"
+                  className="h-12 px-8 rounded-xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground font-bold border-0 transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  {isFetching ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-5 h-5 mr-2" />
+                      Load More Coins ({COINS_PER_LOAD})
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-muted/40 backdrop-blur-md border-2 border-border/30 shadow-lg">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <p className="text-sm font-semibold text-muted-foreground">
+                    All coins loaded ({totalCoinsLoaded.toLocaleString()} total)
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </>
-      )}
-
-      {/* Pagination Controls - Only show when not searching */}
-      {!isSearching && (
-        <div className="flex flex-col items-center gap-4 pt-8 pb-4">
-          {/* Mobile Pagination */}
-          <div className="flex sm:hidden items-center justify-between w-full gap-3 px-2">
-            <Button
-              variant="outline"
-              size="default"
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1 || isLoading}
-              className="flex-1 h-11 rounded-xl border-2 border-border/50 bg-background/60 backdrop-blur-md hover:bg-primary/10 hover:border-primary/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
-            >
-              <ChevronLeft className="w-5 h-5 mr-1" />
-              Prev
-            </Button>
-
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 backdrop-blur-md border-2 border-primary/20 shadow-lg">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-sm font-bold text-foreground whitespace-nowrap">
-                {currentPage} / {displayTotalPages}
-              </span>
-            </div>
-
-            <Button
-              variant="outline"
-              size="default"
-              onClick={handleNextPage}
-              disabled={currentPage === displayTotalPages || isLoading}
-              className="flex-1 h-11 rounded-xl border-2 border-border/50 bg-background/60 backdrop-blur-md hover:bg-primary/10 hover:border-primary/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
-            >
-              Next
-              <ChevronRight className="w-5 h-5 ml-1" />
-            </Button>
-          </div>
-
-          {/* Desktop Pagination */}
-          <div className="hidden sm:flex items-center justify-center gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="default"
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1 || isLoading}
-              className="h-11 px-5 rounded-xl border-2 border-border/50 bg-background/60 backdrop-blur-md hover:bg-primary/10 hover:border-primary/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
-            >
-              <ChevronLeft className="w-5 h-5 mr-1.5" />
-              <span className="hidden md:inline">Previous</span>
-              <span className="md:hidden">Prev</span>
-            </Button>
-
-            <div className="flex items-center gap-1.5 px-2">
-              {getPageNumbers().map((page, index) => (
-                page === '...' ? (
-                  <span key={`ellipsis-${index}`} className="px-2 text-muted-foreground font-bold text-lg">
-                    •••
-                  </span>
-                ) : (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="default"
-                    onClick={() => handlePageClick(page as number)}
-                    disabled={isLoading}
-                    className={
-                      currentPage === page
-                        ? "h-11 w-11 p-0 rounded-xl bg-gradient-to-br from-primary via-primary to-primary/80 text-primary-foreground font-bold border-0 transition-all duration-200 scale-110 hover:scale-115"
-                        : "h-11 w-11 p-0 rounded-xl border-2 border-border/50 bg-background/60 backdrop-blur-md hover:bg-primary/10 hover:border-primary/50 hover:scale-110 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
-                    }
-                  >
-                    {page}
-                  </Button>
-                )
-              ))}
-            </div>
-
-            <Button
-              variant="outline"
-              size="default"
-              onClick={handleNextPage}
-              disabled={currentPage === displayTotalPages || isLoading}
-              className="h-11 px-5 rounded-xl border-2 border-border/50 bg-background/60 backdrop-blur-md hover:bg-primary/10 hover:border-primary/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
-            >
-              <span className="hidden md:inline">Next</span>
-              <span className="md:hidden">Next</span>
-              <ChevronRight className="w-5 h-5 ml-1.5" />
-            </Button>
-          </div>
-
-          {/* Page Info */}
-          <div className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-muted/40 backdrop-blur-md border-2 border-border/30 shadow-lg">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-lg shadow-primary/50" />
-            <p className="text-sm font-semibold text-muted-foreground">
-              Page <span className="text-foreground font-bold text-base">{currentPage}</span> of <span className="text-foreground font-bold text-base">{displayTotalPages}</span>
-              <span className="hidden md:inline"> • <span className="text-foreground font-bold">{ITEMS_PER_PAGE}</span> coins per page</span>
-            </p>
-          </div>
-        </div>
       )}
     </div>
   )
