@@ -43,12 +43,20 @@ export interface CoinDetails {
         market_cap?: Record<string, number>;
         total_volume?: Record<string, number>;
         price_change_percentage_24h?: number;
+        price_change_percentage_7d?: number;
+        price_change_percentage_30d?: number;
+        price_change_percentage_1y?: number;
+        market_cap_change_percentage_24h?: number;
         circulating_supply?: number;
         total_supply?: number | null;
+        fully_diluted_valuation?: Record<string, number>;
         market_cap_rank?: number | null;
         high_24h?: Record<string, number>;
         low_24h?: Record<string, number>;
         ath?: Record<string, number>;
+        ath_change_percentage?: Record<string, number>;
+        atl?: Record<string, number>;
+        atl_change_percentage?: Record<string, number>;
     };
     links?: {
         homepage?: string[];
