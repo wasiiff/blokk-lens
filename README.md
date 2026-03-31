@@ -22,12 +22,13 @@ A comprehensive cryptocurrency tracking and portfolio management platform built 
 - **Portfolio Analytics**: Total value calculation, asset distribution, and performance metrics
 
 ### AI Trading Assistant
-- **AI-Powered Analysis**: Get intelligent trading insights powered by OpenAI
+- **Multi-Provider AI**: Use OpenRouter (env toggle), Vercel AI Gateway, Google Gemini, or direct OpenAI
 - **Technical Analysis**: Automated technical indicators (RSI, MACD, SMA) and market trend analysis
 - **Backtesting**: Test trading strategies with historical data
 - **Draggable & Resizable UI**: Modern floating assistant with minimization support
 - **Session Continuity**: Seamlessly transition between the floating window and full-screen chat
 - **Chat History**: Persistent conversation history for continuous learning
+- **Smart Chat UX**: Streaming-safe session isolation, immediate loader placeholder, and one-click follow-up suggestions
 - **Market Predictions**: AI-driven price predictions and trading recommendations
 - **Real-time Integration**: AI responses based on current market data and technical indicators
 
@@ -67,7 +68,7 @@ A comprehensive cryptocurrency tracking and portfolio management platform built 
 
 ### AI & Analysis
 - **AI SDK**: Vercel AI SDK v6
-- **AI Provider**: OpenAI (GPT models)
+- **AI Providers**: OpenRouter, Vercel AI Gateway, Google Gemini, OpenAI
 - **Technical Analysis**: Custom trading analysis service
 - **Markdown Rendering**: React Markdown with GFM support
 
@@ -78,7 +79,7 @@ A comprehensive cryptocurrency tracking and portfolio management platform built 
 - Node.js 20+ 
 - MongoDB database (local or cloud)
 - CoinGecko API access (free tier works)
-- OpenAI API key (for AI Trading Assistant)
+- At least one AI provider key (OpenRouter, Vercel AI Gateway, Google Gemini, or OpenAI)
 - WalletConnect Project ID (for wallet integration)
 
 ### Installation
@@ -108,8 +109,20 @@ NEXTAUTH_URL=http://localhost:3000
 # CoinGecko API (optional - free tier available)
 COINGECKO_API_KEY=your_coingecko_api_key
 
-# OpenAI API (for AI Trading Assistant)
+# OpenRouter (recommended simple toggle)
+OPENROUTER_ENABLED=true
+OPENROUTER_API_KEY=your_openrouter_api_key
+
+# Optional alternatives
+AI_GATEWAY_API_KEY=your_vercel_ai_gateway_key
+GOOGLE_GENERATIVE_AI_API_KEY=your_google_gemini_key
 OPENAI_API_KEY=your_openai_api_key
+
+# Model selection (works with OpenRouter, Gateway, and OpenAI)
+OPENAI_MODEL=qwen/qwen3.6-plus-preview:free
+
+# Optional OpenRouter fallback model
+OPENROUTER_FALLBACK_MODEL=qwen/qwen3.6-plus-preview:free
 
 # WalletConnect (for wallet integration)
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id
@@ -301,14 +314,25 @@ blokk-lens/
 
 ### AI Trading Assistant
 - **Intelligent Analysis**: AI-powered market insights and trading recommendations
+- **Provider Routing**: OpenRouter toggle support (`OPENROUTER_ENABLED=true`) with provider fallbacks
 - **Technical Indicators**: Automated technical analysis (RSI, MACD, Moving Averages)
 - **Backtesting Engine**: Test trading strategies with historical data
 - **Market Sentiment**: AI-driven sentiment analysis
 - **Price Predictions**: Data-driven price forecasts
 - **Chat Interface**: Natural language interaction with the AI
 - **Persistent History**: Save and review past conversations
+- **Session-Safe Streaming**: In-flight requests are cancelled when switching chats to prevent cross-chat response leakage
+- **Suggested Follow-ups**: Assistant shows clickable follow-up prompts that auto-send
 - **Real-time Data Integration**: AI responses based on current market data
 - **Draggable Interface**: Floating assistant that can be moved and resized
+
+### Deployment Notes (Vercel)
+- If you see `FUNCTION_INVOCATION_TIMEOUT` during AI prompts in production but not locally:
+1. Ensure at least one AI provider key is configured in the deployed environment.
+2. Set `OPENROUTER_ENABLED=true` with `OPENROUTER_API_KEY` (or use Gateway/OpenAI/Google keys).
+3. Redeploy after env changes.
+4. Check function logs for slow upstream calls (CoinGecko/model latency).
+5. This project now uses bounded timeouts for market-context and agent pre-processing plus graceful fallback to avoid long blocking before stream starts.
 
 ### Crypto Converter
 - **Real-time Conversion**: Convert between any supported cryptocurrencies
