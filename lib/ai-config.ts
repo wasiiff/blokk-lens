@@ -112,6 +112,11 @@ const getConfiguredDefaultModel = () => {
   return getProviderNativeDefaultModel();
 };
 
+const getConfiguredOpenRouterFallbackModel = () => {
+  const envFallbackModel = process.env.OPENROUTER_FALLBACK_MODEL?.trim();
+  return envFallbackModel || null;
+};
+
 export const AI_MODELS = {
   // Latest and Most Powerful Models (Vercel AI Gateway)
   QWEN_PLUS: 'alibaba/qwen3.5-plus',                          // Qwen 3.5 Plus - Best overall, multimodal, 1M context
@@ -121,6 +126,10 @@ export const AI_MODELS = {
   GPT4_TURBO: 'openai/gpt-4-turbo',                           // GPT-4 Turbo
   GEMINI_PRO_2: 'google/gemini-2.0-pro-exp',                  // Latest Gemini Pro
   GEMINI_FLASH_2: 'google/gemini-2.0-flash-exp',              // Fast Gemini
+
+  // OpenRouter free fallback candidates (researched)
+  OPENROUTER_QWEN36_FREE: 'qwen/qwen3.6-plus-preview:free',
+  OPENROUTER_NEMOTRON3_SUPER_FREE: 'nvidia/nemotron-3-super-120b-a12b:free',
 
   // Legacy Models (for fallback)
   GPT4: 'openai/gpt-4',
@@ -132,12 +141,26 @@ export const AI_CONFIG = {
   defaultModel: getConfiguredDefaultModel(),
 
   // Fallback models if primary fails
-  fallbackModels: [
-    AI_MODELS.QWEN_MAX_THINKING,  // Advanced reasoning as first fallback
-    AI_MODELS.QWEN_32B,            // Cost-effective as second fallback
-    AI_MODELS.GPT4O,               // GPT-4o as third fallback
-    AI_MODELS.GEMINI_PRO_2,        // Gemini Pro as fourth fallback
-  ],
+  fallbackModels: (() => {
+    if (providerType === 'openrouter') {
+      const envFallback = getConfiguredOpenRouterFallbackModel();
+
+      return [
+        ...(envFallback ? [envFallback] : []),
+        AI_MODELS.OPENROUTER_QWEN36_FREE,        // Strong free reasoning fallback
+        AI_MODELS.OPENROUTER_NEMOTRON3_SUPER_FREE, // Strong free finance/reasoning fallback
+        AI_MODELS.QWEN_MAX_THINKING,
+        AI_MODELS.QWEN_32B,
+      ];
+    }
+
+    return [
+      AI_MODELS.QWEN_MAX_THINKING,  // Advanced reasoning as first fallback
+      AI_MODELS.QWEN_32B,            // Cost-effective as second fallback
+      AI_MODELS.GPT4O,               // GPT-4o as third fallback
+      AI_MODELS.GEMINI_PRO_2,        // Gemini Pro as fourth fallback
+    ];
+  })(),
 
   // Temperature: 0 = deterministic, 1 = creative
   // For trading analysis, we want balanced creativity with accuracy
@@ -204,14 +227,14 @@ export function getAIModel(modelName?: string, options?: {
  */
 export async function getAIModelWithFallback() {
   // Filter fallbacks based on provider compatibility
-  const models = [
+  const models = Array.from(new Set([
     AI_CONFIG.defaultModel,
     ...AI_CONFIG.fallbackModels.filter(m => {
       if (providerType === 'google') return m.includes('gemini') || m.includes('google');
       if (providerType === 'openai') return m.includes('gpt') || m.includes('openai');
-      return true; // Gateway supports all
+      return true; // OpenRouter/Gateway supports all
     })
-  ];
+  ]));
 
   for (const model of models) {
     try {

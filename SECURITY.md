@@ -97,7 +97,7 @@ When contributing to BLOKK LENS, please follow these security guidelines:
 - Validate all request data with Zod schemas
 - Use secure headers (CSP, HSTS, X-Frame-Options, etc.)
 - Log API access for monitoring and debugging
-- Protect API keys (CoinGecko, OpenAI, WalletConnect)
+- Protect API keys (CoinGecko, OpenRouter, Vercel AI Gateway, Google Gemini, OpenAI, WalletConnect)
 - Implement request throttling per user/IP
 - Use API key rotation strategies
 - Monitor for unusual API usage patterns
@@ -172,7 +172,7 @@ When contributing to BLOKK LENS, please follow these security guidelines:
 ### API Protection
 
 - CoinGecko API key protection (server-side only)
-- OpenAI API key security (never exposed to client)
+- AI provider key security (OpenRouter/Gateway/Google/OpenAI - never exposed to client)
 - WalletConnect Project ID management
 - Rate limiting per user/IP address
 - Request validation with Zod schemas

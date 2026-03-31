@@ -47,8 +47,20 @@ NEXTAUTH_URL=http://localhost:3000
 # CoinGecko API (optional - has free tier)
 COINGECKO_API_KEY=your_api_key_optional
 
-# OpenAI API (for AI Trading Assistant)
+# OpenRouter (recommended)
+OPENROUTER_ENABLED=true
+OPENROUTER_API_KEY=your_openrouter_api_key
+
+# Optional alternatives
+AI_GATEWAY_API_KEY=your_vercel_ai_gateway_key
+GOOGLE_GENERATIVE_AI_API_KEY=your_google_gemini_key
 OPENAI_API_KEY=your_openai_api_key
+
+# Model selection
+OPENAI_MODEL=qwen/qwen3.6-plus-preview:free
+
+# Optional OpenRouter fallback model
+OPENROUTER_FALLBACK_MODEL=qwen/qwen3.6-plus-preview:free
 
 # WalletConnect (for wallet integration)
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_walletconnect_project_id
@@ -120,7 +132,7 @@ Priority areas for contribution:
 - **Smooth Scroll**: Lenis
 - **State Management**: TanStack Query (React Query) v5
 - **Form Handling**: React Hook Form + Zod v4
-- **AI**: Vercel AI SDK v6 with OpenAI
+- **AI**: Vercel AI SDK v6 with OpenRouter / Vercel AI Gateway / Google Gemini / OpenAI
 - **Web3**: Wagmi v2 + Viem v2 + RainbowKit v2
 - **Charts**: Recharts
 - **Markdown**: React Markdown with GFM support

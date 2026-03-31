@@ -3,13 +3,55 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getCoinDetails, getCoinMarketChart } from '@/services/coingecko';
 import { TradingAnalyzer } from '@/services/trading-analysis';
-import { getAIModel, AI_CONFIG } from '@/lib/ai-config';
+import { getAIModelWithFallback, AI_CONFIG } from '@/lib/ai-config';
 import { executeTradingAgent } from '@/lib/agents/trading-agent';
 import { checkAIConfig, getSetupInstructions } from '@/lib/check-api-config';
 
 // Use Node.js runtime for MongoDB support
 export const runtime = 'nodejs';
-export const maxDuration = 30;
+export const maxDuration = 60;
+
+const MARKET_CONTEXT_TIMEOUT_MS = 8000;
+const COIN_SEARCH_TIMEOUT_MS = 4000;
+const AGENT_TIMEOUT_MS = 15000;
+
+type Role = 'system' | 'user' | 'assistant';
+
+interface ChatMessage {
+  id?: string;
+  role: Role;
+  content: string;
+}
+
+interface RequestBody {
+  messages: ChatMessage[];
+  sessionId: string;
+  coinId?: string;
+  useAgent?: boolean;
+  userPortfolio?: unknown;
+}
+
+interface CoinSearchItem {
+  id: string;
+  symbol: string;
+  name: string;
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallbackValue: T): Promise<T> {
+  let timeoutHandle: NodeJS.Timeout | undefined;
+
+  const timeoutPromise = new Promise<T>((resolve) => {
+    timeoutHandle = setTimeout(() => resolve(fallbackValue), timeoutMs);
+  });
+
+  const result = await Promise.race([promise, timeoutPromise]);
+
+  if (timeoutHandle) {
+    clearTimeout(timeoutHandle);
+  }
+
+  return result;
+}
 
 // Enhanced trading-focused system prompt
 const TRADING_SYSTEM_PROMPT = `You are an elite Cryptocurrency Trading Copilot and Technical Analyst. Your goal is to collaborate with the user to find profitable trading opportunities while managing risk.
@@ -116,7 +158,7 @@ async function getMarketContext(coinId?: string) {
   }
 }
 
-function buildEnhancedPrompt(marketContext: any): string {
+function buildEnhancedPrompt(marketContext: Awaited<ReturnType<typeof getMarketContext>>): string {
   let enhancedPrompt = TRADING_SYSTEM_PROMPT;
 
   if (marketContext) {
@@ -178,10 +220,10 @@ export async function POST(req: Request) {
     }
 
     const session = await getServerSession(authOptions);
-    const { messages, sessionId, coinId, useAgent = false, userPortfolio } = await req.json();
+    const { messages, sessionId, coinId, useAgent = false, userPortfolio } = await req.json() as RequestBody;
 
     // Check if the last message is a non-trading query
-    const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop();
+    const lastUserMessage = messages.filter((m) => m.role === 'user').pop();
     if (lastUserMessage && isNonTradingQuery(lastUserMessage.content)) {
       // Return a polite redirect message
       const redirectMessage = "I'm specifically designed to help with **cryptocurrency trading and analysis**. 🪙\n\nPlease ask me about:\n- 📊 Price analysis and technical indicators\n- 📈 Trading strategies and entry/exit points\n- ⚠️ Risk assessment and management\n- 💡 Market trends and predictions\n- 📚 Educational content about crypto trading\n\nHow can I help you with your crypto trading journey?";
@@ -196,13 +238,24 @@ export async function POST(req: Request) {
       lastUserMessage.content.toLowerCase().includes('portfolio') ||
       lastUserMessage.content.toLowerCase().includes('predict')) {
       try {
-        const marketContext = coinId ? await getMarketContext(coinId) : null;
-        const response = await executeTradingAgent(
-          lastUserMessage.content,
-          coinId,
-          marketContext?.coin?.symbol,
-          userPortfolio
+        const marketContext = coinId
+          ? await withTimeout(getMarketContext(coinId), MARKET_CONTEXT_TIMEOUT_MS, null)
+          : null;
+
+        const response = await withTimeout(
+          executeTradingAgent(
+            lastUserMessage.content,
+            coinId,
+            marketContext?.coin?.symbol,
+            userPortfolio
+          ),
+          AGENT_TIMEOUT_MS,
+          ''
         );
+
+        if (!response) {
+          throw new Error('Agent timed out. Falling back to standard mode.');
+        }
 
         return new Response(response, {
           headers: { 'Content-Type': 'text/plain' },
@@ -215,8 +268,6 @@ export async function POST(req: Request) {
 
     // Attempt to detect coin if not provided
     let activeCoinId = coinId;
-    let detectedCoinSymbol = null;
-
     if (!activeCoinId) {
       const content = lastUserMessage.content.toLowerCase();
       // Heuristics to extract potential coin name
@@ -256,17 +307,21 @@ export async function POST(req: Request) {
       if (potentialQuery) {
         try {
           const { searchCoins } = await import('@/services/coingecko');
-          const searchResults = await searchCoins(potentialQuery);
+          const searchResults = await withTimeout(
+            searchCoins(potentialQuery),
+            COIN_SEARCH_TIMEOUT_MS,
+            { coins: [] as CoinSearchItem[] }
+          );
+
           if (searchResults && searchResults.coins && searchResults.coins.length > 0) {
             // Find an exact symbol match if possible, otherwise take the first result
-            const exactMatch = searchResults.coins.find((c: any) =>
+            const exactMatch = searchResults.coins.find((c: CoinSearchItem) =>
               c.symbol.toLowerCase() === potentialQuery?.toLowerCase() ||
               c.name.toLowerCase() === potentialQuery?.toLowerCase()
             );
 
             const bestMatch = exactMatch || searchResults.coins[0];
             activeCoinId = bestMatch.id;
-            detectedCoinSymbol = bestMatch.symbol;
             console.log(`Auto-detected coin: ${bestMatch.name} (${activeCoinId}) from query "${potentialQuery}"`);
           }
         } catch (err) {
@@ -276,13 +331,17 @@ export async function POST(req: Request) {
     }
 
     // Get market context if analyzing a specific coin
-    const marketContext = activeCoinId ? await getMarketContext(activeCoinId) : null;
+    const marketContext = activeCoinId
+      ? await withTimeout(getMarketContext(activeCoinId), MARKET_CONTEXT_TIMEOUT_MS, null)
+      : null;
 
     // Build enhanced system prompt with market data
     const enhancedPrompt = buildEnhancedPrompt(marketContext);
 
+    const model = await getAIModelWithFallback();
+
     const result = streamText({
-      model: getAIModel(),
+      model,
       system: enhancedPrompt,
       messages: messages,
       temperature: AI_CONFIG.temperature,
@@ -319,9 +378,9 @@ export async function POST(req: Request) {
 async function saveChatHistory(
   userId: string,
   sessionId: string,
-  messages: any[],
+  messages: ChatMessage[],
   coinId?: string,
-  marketContext?: any
+  marketContext?: Awaited<ReturnType<typeof getMarketContext>>
 ) {
   try {
     const dbConnect = (await import('@/lib/db')).default;
@@ -330,7 +389,7 @@ async function saveChatHistory(
     await dbConnect();
 
     // Generate title from first user message if this is a new session
-    const firstUserMessage = messages.find((m: any) => m.role === 'user');
+    const firstUserMessage = messages.find((m) => m.role === 'user');
     const title = firstUserMessage
       ? firstUserMessage.content.slice(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
       : 'New Chat';
@@ -344,7 +403,7 @@ async function saveChatHistory(
           userId,
           title,
           coinId: coinId || undefined,
-          messages: messages.map((msg: any) => ({
+          messages: messages.map((msg) => ({
             id: msg.id, // Preserve the original message ID
             role: msg.role,
             content: msg.content,
