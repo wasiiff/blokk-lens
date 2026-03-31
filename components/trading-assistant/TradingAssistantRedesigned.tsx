@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  Send,
   TrendingUp,
   BarChart3,
-  Bot,
   User,
   Copy,
   Check,
@@ -20,14 +18,12 @@ import {
   X,
   MessageSquare,
   Trash2,
-  Clock,
   Bitcoin,
   PanelLeftClose,
   PanelLeft,
   Github,
   ArrowUp,
   ArrowLeft,
-  Users,
   Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -57,6 +53,14 @@ interface ChatSession {
   createdAt: string;
   updatedAt: string;
   messages: Message[];
+}
+
+interface StoredChatMessage {
+  id?: string;
+  _id?: string;
+  role: 'user' | 'assistant';
+  content: string;
+  feedback?: 'up' | 'down' | null;
 }
 
 const SUGGESTED_PROMPTS: SuggestedPrompt[] = [
@@ -168,6 +172,58 @@ function TradingAssistantRedesigned({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const activeRequestIdRef = useRef<string | null>(null);
+  const activeRequestSessionIdRef = useRef<string | null>(null);
+  const currentSessionIdRef = useRef(sessionId);
+
+  useEffect(() => {
+    currentSessionIdRef.current = sessionId;
+  }, [sessionId]);
+
+  const cancelActiveRequest = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    activeRequestIdRef.current = null;
+    activeRequestSessionIdRef.current = null;
+    setIsLoading(false);
+  }, []);
+
+  const getReplySuggestions = useCallback((content: string): string[] => {
+    const normalized = content.toLowerCase();
+    const defaultSuggestions = [
+      'Give me a concrete trade setup with entry, stop loss, and take profit.',
+      'What invalidates this setup and where should I cut the trade?',
+      'Convert this into a low-risk swing strategy for the next 3-7 days.',
+    ];
+
+    if (normalized.includes('bitcoin') || normalized.includes('btc')) {
+      return [
+        'Now analyze BTC on a higher timeframe and confirm the direction.',
+        'Give me BTC key support/resistance levels for today.',
+        'Create a BTC scalp setup with tight risk management.',
+      ];
+    }
+
+    if (normalized.includes('ethereum') || normalized.includes('eth')) {
+      return [
+        'Now compare ETH strength vs BTC and suggest where momentum is better.',
+        'Give me ETH intraday support/resistance and a short-term setup.',
+        'What are the top ETH risk factors before entering now?',
+      ];
+    }
+
+    if (coinSymbol) {
+      return [
+        `Give me a high-conviction ${coinSymbol.toUpperCase()} setup with R:R > 2.0.`,
+        `What are the best entry zones for ${coinSymbol.toUpperCase()} if price pulls back?`,
+        `Build a safer ${coinSymbol.toUpperCase()} plan with strict stop loss levels.`,
+      ];
+    }
+
+    return defaultSuggestions;
+  }, [coinSymbol]);
 
   const loadChatHistory = useCallback(async () => {
     if (!session?.user) return;
@@ -200,12 +256,14 @@ function TradingAssistantRedesigned({
   }, [querySessionId, session]);
 
   const loadChatSession = async (sid: string) => {
+    cancelActiveRequest();
+
     try {
       const res = await fetch(`/api/chat-history?sessionId=${sid}`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.messages) {
-          const loadedMessages = data.messages.map((msg: any, idx: number) => ({
+          const loadedMessages = (data.messages as StoredChatMessage[]).map((msg, idx: number) => ({
             id: msg.id || msg._id || `${msg.role}-${sid}-${idx}`,
             role: msg.role,
             content: msg.content,
@@ -239,11 +297,19 @@ function TradingAssistantRedesigned({
   };
 
   const startNewChat = () => {
+    cancelActiveRequest();
+
     const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setSessionId(newSessionId);
     setMessages([]);
     setInputValue('');
   };
+
+  useEffect(() => {
+    return () => {
+      cancelActiveRequest();
+    };
+  }, [cancelActiveRequest]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -278,30 +344,38 @@ function TradingAssistantRedesigned({
     }
   }, []);
 
-  const handleFormSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
-    
+  const sendMessage = useCallback(async (rawInput: string) => {
+    const nextInput = rawInput.trim();
+    if (!nextInput || isLoading) return;
+
+    const requestSessionId = currentSessionIdRef.current;
+    const requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       role: 'user',
-      content: inputValue,
+      content: nextInput,
     };
-    
-    setMessages(prev => [...prev, userMessage]);
+
+    const assistantId = `assistant-${Date.now()}`;
+
+    const outgoingMessages = [...messages, userMessage];
+    setMessages(prev => [...prev, userMessage, { id: assistantId, role: 'assistant', content: '' }]);
     setInputValue('');
     if (inputRef.current) inputRef.current.style.height = 'auto';
     setIsLoading(true);
 
     try {
       abortControllerRef.current = new AbortController();
-      
+      activeRequestIdRef.current = requestId;
+      activeRequestSessionIdRef.current = requestSessionId;
+
       const response = await fetch('/api/trading-assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...messages, userMessage],
-          sessionId,
+          messages: outgoingMessages,
+          sessionId: requestSessionId,
           coinId,
         }),
         signal: abortControllerRef.current.signal,
@@ -321,16 +395,23 @@ function TradingAssistantRedesigned({
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantMessage = '';
-      const assistantId = `assistant-${Date.now()}`;
 
       if (reader) {
         while (true) {
+          if (
+            activeRequestIdRef.current !== requestId ||
+            activeRequestSessionIdRef.current !== requestSessionId ||
+            currentSessionIdRef.current !== requestSessionId
+          ) {
+            break;
+          }
+
           const { done, value } = await reader.read();
           if (done) break;
-          
+
           const chunk = decoder.decode(value);
           assistantMessage += chunk;
-          
+
           setMessages(prev => {
             const existing = prev.find(m => m.id === assistantId);
             if (existing) {
@@ -341,25 +422,43 @@ function TradingAssistantRedesigned({
         }
       }
 
-      if (session?.user) {
+      if (
+        session?.user &&
+        activeRequestIdRef.current === requestId &&
+        currentSessionIdRef.current === requestSessionId
+      ) {
         setTimeout(() => {
           loadChatHistory();
         }, 500);
       }
     } catch (error) {
-      if (error instanceof Error && error.name !== 'AbortError') {
+      if (
+        error instanceof Error &&
+        error.name !== 'AbortError' &&
+        activeRequestIdRef.current === requestId &&
+        currentSessionIdRef.current === requestSessionId
+      ) {
         console.error('Error:', error);
-        setMessages(prev => [...prev, {
-          id: `error-${Date.now()}`,
-          role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.',
-        }]);
+        setMessages(prev => prev.map(message =>
+          message.id === assistantId
+            ? { ...message, content: 'Sorry, I encountered an error. Please try again.' }
+            : message
+        ));
       }
     } finally {
-      setIsLoading(false);
-      abortControllerRef.current = null;
+      if (activeRequestIdRef.current === requestId) {
+        setIsLoading(false);
+        activeRequestIdRef.current = null;
+        activeRequestSessionIdRef.current = null;
+        abortControllerRef.current = null;
+      }
     }
-  }, [inputValue, isLoading, messages, sessionId, coinId, session, loadChatHistory]);
+  }, [coinId, isLoading, loadChatHistory, messages, session]);
+
+  const handleFormSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await sendMessage(inputValue);
+  }, [inputValue, sendMessage]);
 
   const handleFeedback = useCallback((messageId: string, feedback: 'up' | 'down') => {
     setMessages(prev => prev.map(m => 
@@ -688,7 +787,7 @@ function TradingAssistantRedesigned({
                           onChange={handleInputChange}
                           onKeyDown={handleKeyDown}
                           placeholder="Ask me how to start a conversation..."
-                          className="flex-1 bg-transparent placeholder:text-muted-foreground resize-none outline-none text-sm max-h-[100px]"
+                          className="flex-1 bg-transparent placeholder:text-muted-foreground resize-none outline-none text-sm max-h-25"
                           rows={1}
                         />
                         <button
@@ -738,47 +837,72 @@ function TradingAssistantRedesigned({
                     >
                       {message.role === 'assistant' ? (
                         <>
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="w-8 h-8 flex items-center justify-center">
+                          <div className="group grid grid-cols-[32px_1fr] gap-3 items-start">
+                            <div className="w-8 h-8 flex items-center justify-center mt-0.5 shrink-0">
                               <Logo size="sm" className="w-full h-full text-primary" />
                             </div>
-                            <span className="text-sm font-medium">BlokkLens AI</span>
-                          </div>
-                          
-                          <div className="group relative pl-11">
-                            <div className="prose prose-sm dark:prose-invert max-w-none">
-                              <ChatMarkdown>{message.content}</ChatMarkdown>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-lg"
-                                onClick={() => handleCopy(message.content, index)}
-                              >
-                                {copiedIndex === index ? (
-                                  <Check className="w-4 h-4 text-emerald-500" />
-                                ) : (
-                                  <Copy className="w-4 h-4" />
+
+                            <div>
+                              <span className="text-sm font-medium">BlokkLens AI</span>
+
+                              <div className="h-5 mt-1">
+                                {isLoading && index === messages.length - 1 && (
+                                  <div className="inline-flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    <span className="text-xs">Thinking...</span>
+                                  </div>
                                 )}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={cn("h-8 w-8 rounded-lg", message.feedback === 'up' && "text-emerald-500")}
-                                onClick={() => handleFeedback(message.id, 'up')}
-                              >
-                                <ThumbsUp className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className={cn("h-8 w-8 rounded-lg", message.feedback === 'down' && "text-rose-500")}
-                                onClick={() => handleFeedback(message.id, 'down')}
-                              >
-                                <ThumbsDown className="w-4 h-4" />
-                              </Button>
+                              </div>
+
+                              <div className="prose prose-sm dark:prose-invert max-w-none mt-1 min-h-5">
+                                <ChatMarkdown>{message.content}</ChatMarkdown>
+                              </div>
+
+                              {!isLoading && index === messages.length - 1 && (
+                                <div className="flex flex-wrap gap-2 mt-4">
+                                  {getReplySuggestions(message.content).map((suggestion) => (
+                                    <button
+                                      key={suggestion}
+                                      type="button"
+                                      onClick={() => sendMessage(suggestion)}
+                                      className="text-xs px-3 py-1.5 rounded-full border border-border bg-muted/40 hover:bg-muted hover:border-primary/40 transition-colors"
+                                    >
+                                      {suggestion}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+
+                              <div className="flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-lg"
+                                  onClick={() => handleCopy(message.content, index)}
+                                >
+                                  {copiedIndex === index ? (
+                                    <Check className="w-4 h-4 text-emerald-500" />
+                                  ) : (
+                                    <Copy className="w-4 h-4" />
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn("h-8 w-8 rounded-lg", message.feedback === 'up' && "text-emerald-500")}
+                                  onClick={() => handleFeedback(message.id, 'up')}
+                                >
+                                  <ThumbsUp className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className={cn("h-8 w-8 rounded-lg", message.feedback === 'down' && "text-rose-500")}
+                                  onClick={() => handleFeedback(message.id, 'down')}
+                                >
+                                  <ThumbsDown className="w-4 h-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </>
@@ -800,25 +924,6 @@ function TradingAssistantRedesigned({
                   ))}
                 </AnimatePresence>
 
-                {isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-8"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 flex items-center justify-center animate-pulse">
-                        <Logo size="sm" className="w-full h-full text-primary" />
-                      </div>
-                      <span className="text-sm font-medium">BlokkLens AI</span>
-                    </div>
-                    <div className="pl-11 flex items-center gap-2 text-muted-foreground">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span className="text-sm">Thinking...</span>
-                    </div>
-                  </motion.div>
-                )}
-
                 <div ref={messagesEndRef} />
               </>
             )}
@@ -837,8 +942,8 @@ function TradingAssistantRedesigned({
                       value={inputValue}
                       onChange={handleInputChange}
                       onKeyDown={handleKeyDown}
-                      placeholder="Paste your chat screen!"
-                      className="flex-1 bg-transparent placeholder:text-muted-foreground resize-none outline-none text-sm max-h-[100px]"
+                      placeholder="Ask for a setup, trend read, or risk plan..."
+                      className="flex-1 bg-transparent placeholder:text-muted-foreground resize-none outline-none text-sm max-h-25"
                       rows={1}
                     />
                     <button

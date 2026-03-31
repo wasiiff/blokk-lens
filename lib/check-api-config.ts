@@ -1,14 +1,34 @@
 /**
  * Check if AI API is properly configured
  */
+const isEnvTruthy = (value?: string) => ['1', 'true', 'yes', 'on'].includes((value || '').toLowerCase());
+
 export function checkAIConfig(): {
   isConfigured: boolean;
-  provider: 'vercel-gateway' | 'openai' | 'google' | 'none';
+  provider: 'openrouter' | 'vercel-gateway' | 'openai' | 'google' | 'none';
   message: string;
 } {
+  const openRouterEnabled = isEnvTruthy(process.env.OPENROUTER_ENABLED);
+  const hasOpenRouterKey = !!process.env.OPENROUTER_API_KEY;
   const hasGatewayKey = !!process.env.AI_GATEWAY_API_KEY;
   const hasGoogleKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   const hasOpenAIKey = !!process.env.OPENAI_API_KEY;
+
+  if (openRouterEnabled) {
+    if (hasOpenRouterKey) {
+      return {
+        isConfigured: true,
+        provider: 'openrouter',
+        message: '✅ Using OpenRouter',
+      };
+    }
+
+    return {
+      isConfigured: false,
+      provider: 'none',
+      message: '❌ OPENROUTER_ENABLED is true, but OPENROUTER_API_KEY is missing.',
+    };
+  }
 
   if (hasGatewayKey) {
     return {
@@ -37,7 +57,7 @@ export function checkAIConfig(): {
   return {
     isConfigured: false,
     provider: 'none',
-    message: '❌ No AI API key configured. Please set AI_GATEWAY_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or OPENAI_API_KEY.',
+    message: '❌ No AI API key configured. Please set OPENROUTER_ENABLED=true + OPENROUTER_API_KEY, AI_GATEWAY_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or OPENAI_API_KEY.',
   };
 }
 
@@ -47,6 +67,14 @@ export function checkAIConfig(): {
 export function getSetupInstructions(): string {
   return `
 To fix this:
+
+Option 0: OpenRouter (env-toggle)
+1. Go to https://openrouter.ai/keys
+2. Create an API key
+3. Add to .env:
+  OPENROUTER_ENABLED=true
+  OPENROUTER_API_KEY=your_openrouter_key_here
+4. Restart your app
 
 Option 1 (RECOMMENDED): Vercel AI Gateway
 1. Go to Vercel Dashboard → Your Project → AI Gateway

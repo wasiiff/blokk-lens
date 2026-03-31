@@ -338,7 +338,7 @@ async function saveChatHistory(
     // Replace all messages instead of pushing to avoid duplicates
     // Preserve message IDs if they exist
     await ChatHistory.findOneAndUpdate(
-      { sessionId },
+      { userId, sessionId },
       {
         $set: {
           userId,
