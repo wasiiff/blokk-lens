@@ -2,6 +2,8 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
+const isEnvTruthy = (value?: string) => ['1', 'true', 'yes', 'on'].includes((value || '').toLowerCase());
+
 /**
  * AI Configuration for Trading Assistant
  * 
@@ -27,6 +29,23 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 
 // Create provider based on configuration
 const getProvider = () => {
+  // Explicit OpenRouter toggle
+  const OPENROUTER_ENABLED = isEnvTruthy(process.env.OPENROUTER_ENABLED);
+  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+  if (OPENROUTER_ENABLED) {
+    if (!OPENROUTER_API_KEY) {
+      throw new Error('OPENROUTER_ENABLED is true but OPENROUTER_API_KEY is missing in .env');
+    }
+
+    console.log('✅ Using OpenRouter');
+    return createOpenAICompatible({
+      name: 'openrouter',
+      apiKey: OPENROUTER_API_KEY,
+      baseURL: 'https://openrouter.ai/api/v1',
+    });
+  }
+
   // Check for Vercel AI Gateway first (recommended)
   const AI_GATEWAY_API_KEY = process.env.AI_GATEWAY_API_KEY;
 
@@ -61,16 +80,18 @@ const getProvider = () => {
   }
 
   console.error('❌ No API key found!');
+  console.error('   Option 0: Set OPENROUTER_ENABLED=true and OPENROUTER_API_KEY in .env');
   console.error('   Option 1: Add AI_GATEWAY_API_KEY to .env (get from Vercel Dashboard)');
   console.error('   Option 2: Add GOOGLE_GENERATIVE_AI_API_KEY to .env (get from Google AI Studio)');
   console.error('   Option 3: Add OPENAI_API_KEY to .env (get from https://platform.openai.com/api-keys)');
-  throw new Error('Missing API key: Set AI_GATEWAY_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or OPENAI_API_KEY in .env');
+  throw new Error('Missing API key: Set OPENROUTER_ENABLED=true + OPENROUTER_API_KEY, or AI_GATEWAY_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or OPENAI_API_KEY in .env');
 };
 
 export const aiProvider = getProvider();
 
 // Helper to determine active provider type
 const getActiveProviderType = () => {
+  if (isEnvTruthy(process.env.OPENROUTER_ENABLED) && process.env.OPENROUTER_API_KEY) return 'openrouter';
   if (process.env.AI_GATEWAY_API_KEY) return 'vercel';
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return 'google';
   if (process.env.OPENAI_API_KEY) return 'openai';
@@ -78,6 +99,18 @@ const getActiveProviderType = () => {
 };
 
 export const providerType = getActiveProviderType();
+
+const getProviderNativeDefaultModel = () => {
+  if (providerType === 'google') return AI_MODELS.GEMINI_PRO_2;
+  if (providerType === 'openai') return AI_MODELS.GPT4O;
+  return AI_MODELS.QWEN_PLUS;
+};
+
+const getConfiguredDefaultModel = () => {
+  const envModel = process.env.OPENAI_MODEL?.trim();
+  if (envModel) return envModel;
+  return getProviderNativeDefaultModel();
+};
 
 export const AI_MODELS = {
   // Latest and Most Powerful Models (Vercel AI Gateway)
@@ -95,10 +128,8 @@ export const AI_MODELS = {
 } as const;
 
 export const AI_CONFIG = {
-  // Use the most powerful model compatible with the active provider
-  defaultModel: providerType === 'google'
-    ? AI_MODELS.GEMINI_PRO_2
-    : (providerType === 'openai' ? AI_MODELS.GPT4O : AI_MODELS.QWEN_PLUS),
+  // Uses OPENAI_MODEL when provided, otherwise provider-aware default.
+  defaultModel: getConfiguredDefaultModel(),
 
   // Fallback models if primary fails
   fallbackModels: [
@@ -146,8 +177,8 @@ export function getAIModel(modelName?: string, options?: {
   if (providerType === 'google') {
     // If asking for non-google model while on google provider, fallback to default google model
     if (!model.includes('gemini') && !model.includes('google')) {
-      console.warn(`⚠️ Requested model ${model} not compatible with Google provider. Using default.`);
-      model = AI_CONFIG.defaultModel;
+      console.warn(`⚠️ Requested model ${model} not compatible with Google provider. Using ${AI_MODELS.GEMINI_PRO_2}.`);
+      model = AI_MODELS.GEMINI_PRO_2;
     }
     // Strip 'google/' prefix for direct SDK usage if needed, though some versions handle it.
     // Use safe naming for Google SDK
@@ -157,8 +188,8 @@ export function getAIModel(modelName?: string, options?: {
   } else if (providerType === 'openai') {
     // If asking for non-openai model while on openai provider
     if (!model.includes('gpt') && !model.includes('openai')) {
-      console.warn(`⚠️ Requested model ${model} not compatible with OpenAI provider. Using default.`);
-      model = AI_CONFIG.defaultModel;
+      console.warn(`⚠️ Requested model ${model} not compatible with OpenAI provider. Using ${AI_MODELS.GPT4O}.`);
+      model = AI_MODELS.GPT4O;
     }
   }
 
