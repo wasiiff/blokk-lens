@@ -234,9 +234,10 @@ export async function POST(req: Request) {
     }
 
     // Use LangGraph agent for advanced queries (backtest, portfolio, predictions)
-    if (useAgent || lastUserMessage.content.toLowerCase().includes('backtest') ||
-      lastUserMessage.content.toLowerCase().includes('portfolio') ||
-      lastUserMessage.content.toLowerCase().includes('predict')) {
+    const shouldUseAgent = useAgent || (lastUserMessage?.content.toLowerCase().includes('backtest') ||
+      lastUserMessage?.content.toLowerCase().includes('portfolio') ||
+      lastUserMessage?.content.toLowerCase().includes('predict'));
+    if (shouldUseAgent && lastUserMessage) {
       try {
         const marketContext = coinId
           ? await withTimeout(getMarketContext(coinId), MARKET_CONTEXT_TIMEOUT_MS, null)
@@ -247,7 +248,7 @@ export async function POST(req: Request) {
             lastUserMessage.content,
             coinId,
             marketContext?.coin?.symbol,
-            userPortfolio
+            userPortfolio as any[] | undefined
           ),
           AGENT_TIMEOUT_MS,
           ''
@@ -268,7 +269,7 @@ export async function POST(req: Request) {
 
     // Attempt to detect coin if not provided
     let activeCoinId = coinId;
-    if (!activeCoinId) {
+    if (!activeCoinId && lastUserMessage) {
       const content = lastUserMessage.content.toLowerCase();
       // Heuristics to extract potential coin name
       // Look for explicit patterns first
@@ -350,9 +351,9 @@ export async function POST(req: Request) {
         if (session?.user && sessionId && text) {
           try {
             // Save both user message and AI response
-            const allMessages = [
+            const allMessages: ChatMessage[] = [
               ...messages,
-              { role: 'assistant', content: text }
+              { role: 'assistant', content: text } as ChatMessage
             ];
 
             await saveChatHistory(session.user.id, sessionId, allMessages, coinId, marketContext);
