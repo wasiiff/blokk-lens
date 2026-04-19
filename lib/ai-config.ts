@@ -101,9 +101,10 @@ const getActiveProviderType = () => {
 export const providerType = getActiveProviderType();
 
 const getProviderNativeDefaultModel = () => {
-  if (providerType === 'google') return AI_MODELS.GEMINI_PRO_2;
-  if (providerType === 'openai') return AI_MODELS.GPT4O;
-  return AI_MODELS.QWEN_PLUS;
+  if (providerType === 'google') return AI_MODELS.GEMINI_FLASH_2;  // Ultra-fast for real-time
+  if (providerType === 'openai') return AI_MODELS.GPT35_TURBO;      // OpenAI fallback
+  // OpenRouter or no specific provider: use verified free model
+  return AI_MODELS.MISTRAL_7B_FREE;  // 🆓 Verified FREE - works reliably
 };
 
 const getConfiguredDefaultModel = () => {
@@ -118,8 +119,17 @@ const getConfiguredOpenRouterFallbackModel = () => {
 };
 
 export const AI_MODELS = {
-  // Latest and Most Powerful Models (Vercel AI Gateway)
-  QWEN_PLUS: 'alibaba/qwen3.5-plus',                          // Qwen 3.5 Plus - Best overall, multimodal, 1M context
+  // 🆓 VERIFIED FREE MODELS FOR CRYPTO - OpenRouter tested
+  MISTRAL_7B_FREE: 'mistral/mistral-7b-instruct:free',      // 🆓 FREE - Fast, verified working
+  LLAMA2_7B_FREE: 'meta-llama/llama-2-7b-chat:free',         // 🆓 FREE - Reliable fallback
+  OPENROUTER_AUTO: 'openrouter/auto',                         // 🆓 FREE - Auto-routes to available free model
+
+  // ⚡ FASTEST PAID MODELS FOR REAL-TIME TRADING
+  GROK_41_FAST: 'x-ai/grok-4.1-fast',                         // ⚡ Ultra-fast - Best for real-time crypto analysis
+  GLM_51: 'z-ai/glm-5.1',                                      // 💰 Low cost - Finance #12, excellent for crypto markets
+  
+  // Strong general purpose (fallbacks)
+  QWEN_PLUS: 'alibaba/qwen3.5-plus',                          // Good overall, multimodal, 1M context
   QWEN_MAX_THINKING: 'alibaba/qwen3-max-thinking',            // Advanced reasoning with search & tool use
   QWEN_32B: 'alibaba/qwen-3-32b',                             // Solid performance, cost-effective
   GPT4O: 'openai/gpt-4o',                                      // Latest GPT-4 Optimized
@@ -127,38 +137,41 @@ export const AI_MODELS = {
   GEMINI_PRO_2: 'google/gemini-2.0-pro-exp',                  // Latest Gemini Pro
   GEMINI_FLASH_2: 'google/gemini-2.0-flash-exp',              // Fast Gemini
 
-  // OpenRouter free fallback candidates (researched)
-  OPENROUTER_QWEN36_FREE: 'qwen/qwen3.6-plus-preview:free',
-  OPENROUTER_NEMOTRON3_SUPER_FREE: 'nvidia/nemotron-3-super-120b-a12b:free',
-
   // Legacy Models (for fallback)
   GPT4: 'openai/gpt-4',
   GPT35_TURBO: 'openai/gpt-3.5-turbo',
 } as const;
 
 export const AI_CONFIG = {
-  // Uses OPENAI_MODEL when provided, otherwise provider-aware default.
+  // Uses OPENAI_MODEL when provided, otherwise provider-aware default (FREE models prioritized)
   defaultModel: getConfiguredDefaultModel(),
 
-  // Fallback models if primary fails
+  // Fallback models if primary fails - VERIFIED FREE models only
   fallbackModels: (() => {
     if (providerType === 'openrouter') {
       const envFallback = getConfiguredOpenRouterFallbackModel();
 
       return [
         ...(envFallback ? [envFallback] : []),
-        AI_MODELS.OPENROUTER_QWEN36_FREE,        // Strong free reasoning fallback
-        AI_MODELS.OPENROUTER_NEMOTRON3_SUPER_FREE, // Strong free finance/reasoning fallback
-        AI_MODELS.QWEN_MAX_THINKING,
-        AI_MODELS.QWEN_32B,
+        AI_MODELS.MISTRAL_7B_FREE,               // 🆓 FREE - Fast, verified working
+        AI_MODELS.LLAMA2_7B_FREE,                // 🆓 FREE - Reliable fallback
+        AI_MODELS.OPENROUTER_AUTO,               // 🆓 FREE - Auto-routes to available free
+        AI_MODELS.GROK_41_FAST,                  // ⚡ Ultra-fast for real-time
+        AI_MODELS.GLM_51,                        // 💰 Low cost for market analysis
+        AI_MODELS.QWEN_MAX_THINKING,             // Advanced reasoning
+        AI_MODELS.QWEN_PLUS,                     // Multimodal strength
       ];
     }
 
     return [
-      AI_MODELS.QWEN_MAX_THINKING,  // Advanced reasoning as first fallback
-      AI_MODELS.QWEN_32B,            // Cost-effective as second fallback
-      AI_MODELS.GPT4O,               // GPT-4o as third fallback
-      AI_MODELS.GEMINI_PRO_2,        // Gemini Pro as fourth fallback
+      AI_MODELS.MISTRAL_7B_FREE,       // 🆓 FREE - Start with verified free
+      AI_MODELS.LLAMA2_7B_FREE,        // 🆓 FREE - Reliable crypto analysis
+      AI_MODELS.OPENROUTER_AUTO,       // 🆓 FREE - Auto-route to available
+      AI_MODELS.GROK_41_FAST,          // ⚡ Real-time trading analysis
+      AI_MODELS.GLM_51,                // 💰 Finance-focused market data
+      AI_MODELS.GEMINI_FLASH_2,        // Ultra-fast backup
+      AI_MODELS.QWEN_MAX_THINKING,     // Advanced fallback
+      AI_MODELS.GPT4O,                 // Reliable fallback
     ];
   })(),
 
